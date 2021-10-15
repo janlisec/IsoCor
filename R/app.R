@@ -34,7 +34,7 @@ ic_app <- function() {
               shiny::div(
                 class = "verticalhorizontal",
                 img(src = "pics/bam_logo_20pt.gif", position = "absolute", margin = "auto", alt="BAM Logo"),
-                strong("BAM"), em("IsoCor"), "Tool",
+                strong("BAM"), em("IsoCor"),
                 position="relative"
               )
             ),
@@ -139,9 +139,10 @@ ic_app <- function() {
             ),
             tabPanel(
               title = "Delta table", p(""),
-              DTOutput("ic_table_deltas"),
+              #DTOutput("ic_table_deltas"),
               fluidRow(
-                column(width = 8, plotOutput(outputId = "ic_deltaplot", height = "400px")),
+                #column(width = 8, plotOutput(outputId = "ic_deltaplot", height = "400px")),
+                column(width = 8, DTOutput("ic_table_deltas")),
                 column(width = 4, plotOutput(outputId = "ic_deltaplot2", height = "400px"))
               )
             ),
@@ -163,6 +164,11 @@ ic_app <- function() {
     # increase maximum file size for upload
     options(shiny.maxRequestSize=30*1024^2) # BrukerFlex Files are >5MB
   
+    # load testdata on app start
+    tde <- new.env()
+    utils::data(testdata, envir = tde)
+    testdata <- get0(x = "testdata", envir = tde)
+    
     ### setup reactive Values ####################################################
     # setup plot range (min, max)
     spec_plots_xmin <- reactiveVal(0)
@@ -218,9 +224,7 @@ ic_app <- function() {
           out <- NULL
         }
       } else {
-        tde <- new.env()
-        utils::data(testdata, envir = tde)
-        out <- get0(x = "testdata", envir = tde)
+        out <- testdata
         #out <- lapply(dir(path = "www", pattern = ".exp$", full.names = TRUE), read_raw_data)
         #names(out) <- dir(path = "www", pattern = ".exp$")
       }
@@ -229,7 +233,7 @@ ic_app <- function() {
         updateSelectInput(inputId = "ic_par_focus_sample", choices = paste("Sample", 1:length(out)))
         if (length(out)>1) {
           enable(selector = "#ic_par_specplot input[value='overlay_mi']")
-          show(id = "ic_par_focus_sample")
+          #show(id = "ic_par_focus_sample")
         } else {
           updateCheckboxGroupInput(
             inputId = "ic_par_specplot",
@@ -240,6 +244,10 @@ ic_app <- function() {
         }
       }
       return(out)
+    })
+    
+    observeEvent(input$ic_par_specplot, {
+      toggle(id = "ic_par_focus_sample", condition = !("overlay_mi" %in% input$ic_par_specplot))
     })
     
     # check table headers for consistency and to get colnames to allow user column selection
@@ -577,16 +585,16 @@ ic_app <- function() {
     # table of peaks of 'new sample'
     output$ic_table_peaks <- renderDT({
       ic_table_peaks_pre()
-    }, server = FALSE, extensions = "Buttons", options = list("dom"="Blfrtip", "pageLength"=100, buttons = c('copy', 'csv', 'excel', 'pdf')), selection=list(mode="single", target="row"), rownames=NULL)
+    }, server = FALSE, extensions = "Buttons", options = list("dom"="Bfti", "pageLength"=100, buttons = c('copy', 'csv', 'excel', 'pdf')), selection=list(mode="single", target="row"), rownames=NULL)
     
     # ratio(s) table
     output$ic_table_ratios <- renderDT({
       ic_table_ratios_pre()
-    }, server = FALSE, extensions = "Buttons", options = list("dom"="Blfrtip", "pageLength"=100, buttons = c('copy', 'csv', 'excel', 'pdf')), selection=list(mode="single", target="row"), rownames=NULL)
+    }, server = FALSE, extensions = "Buttons", options = list("dom"="Bfti", "pageLength"=100, buttons = c('copy', 'csv', 'excel', 'pdf')), selection=list(mode="single", target="row"), rownames=NULL)
     # delta(s) table
     output$ic_table_deltas <- renderDT({
       ic_table_deltas_pre()
-    }, server = FALSE, extensions = "Buttons", options = list("dom"="Blfrtip", "pageLength"=100, buttons = c('copy', 'csv', 'excel', 'pdf')), selection=list(mode="single", target="row"), rownames=NULL)  
+    }, server = FALSE, extensions = "Buttons", options = list("dom"="Bfti", "pageLength"=100, buttons = c('copy', 'csv', 'excel', 'pdf')), selection=list(mode="single", target="row"), rownames=NULL)  
     
     ## plots
     # ...
@@ -691,8 +699,8 @@ ic_app <- function() {
       x <- as.numeric(x) + c(-0.05,0,0.05)[as.numeric(df[,"Ratio method"])]
       y <- df[,"Mean Delta"]
       e <- df[,"RSD Delta"]
-      par(mar = c(4.5, 4.5, 0.5, 0.5))
-      plot(x=range(x), y=range(rep(y,2)+rep(c(-1,1),each=length(y))*2*e), type="n", xlab="Zone [%] (values are slightly shifted to improve visibility)", ylab="Mean Delta", axes=F)
+      par(mar = c(4.5, 4.5, 1.5, 0.5))
+      plot(x=range(x)+c(-1,1)*0.1*diff(range(x)), y=range(rep(y,2)+rep(c(-1,1),each=length(y))*2*e), type="n", xlab="Zone [%] (values are slightly shifted to improve visibility)", ylab="Mean Delta", axes=F)
       axis(2); axis(1, at=1:4, labels = x_ann); box()
       legend(x = "top", horiz=TRUE, pch=c(21,22,24), pt.bg=c(5:7), legend=levels(df[,"Ratio method"]))
       segments(x0 = x, y0 = y-2*e, y1 = y+2*e, col = cols)
