@@ -1,0 +1,28 @@
+Package: IsoCor
+Title: Analyze isotope ratios from ICP-MS measurements in a shiny app
+Version: 0.1.7
+Date: 2021-10-14
+Authors@R: 
+    person(
+      given = "Jan", 
+      family = "Lisec", 
+      email = "jan.lisec@bam.de", 
+      role = c("aut", "cre"),
+      comment = c(ORCID = "0000-0003-1220-2286")
+    )
+Description: The package provides a single function starting a ShinyApp for local use. This App allows to analyze isotope ratios from ICP-MS measurements.
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.2
+Depends: 
+    R (>= 3.50)
+Imports: 
+    bsplus,
+    DT,
+    htmltools,
+    MALDIquant,
+    plyr,
+    pracma,
+    shiny,
+    shinyjs
