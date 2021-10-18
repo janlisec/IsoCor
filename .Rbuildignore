@@ -1,6 +1,7 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^app\.R$
-^www$
+^inst\\dev$
 ^rsconnect$
 global.R
+.rcsignore

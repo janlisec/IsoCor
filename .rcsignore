@@ -1,0 +1,9 @@
+NAMESPACE
+DESCRIPTION
+.Rbuildignore
+.gitignore
+man/testdata.Rd
+man/iso_ratio.Rd
+man/read_raw_data.Rd
+man/ic_app.Rd
+man/find_peak_boundaries.Rd

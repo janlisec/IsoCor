@@ -23,10 +23,16 @@
 #'@importFrom shiny fluidPage sidebarLayout sidebarPanel fluidRow column selectInput fileInput tabsetPanel tabPanel plotOutput uiOutput mainPanel helpText numericInput actionButton checkboxInput radioButtons dblclickOpts brushOpts reactiveVal isolate reactive req need observeEvent updateSelectizeInput updateNumericInput renderPrint renderPlot renderUI shinyApp updateSelectInput validate reactiveValues updateCheckboxGroupInput updateActionButton updateTextInput checkboxGroupInput tagList textInput 
 #'@importFrom shinyjs useShinyjs hide show enable disable toggle
 #'@importFrom stats median rnorm sd
-#'@importFrom utils data
+#'@importFrom utils data packageDate packageVersion
 #'
 #'@export
 ic_app <- function() {
+
+  # some parameters which are set in global.R for online app but here for package version  
+  if (!exists("app_destination")) {
+    status_line <- paste0("ver ", packageVersion("IsoCor"), " (", packageDate("IsoCor"), ") jan.lisec@bam.de")
+    shiny::addResourcePath(prefix = 'pics', directoryPath = paste(system.file(package = "IsoCor"), "www", sep="/"))
+  }
   
   # Define UI for application that draws a histogram
   ui <- tagList(
@@ -40,12 +46,12 @@ ic_app <- function() {
               width = 4, 
               shiny::div(
                 class = "verticalhorizontal",
-                img(src = "pics/bam_logo_20pt.gif", position = "absolute", margin = "auto", alt="BAM Logo"),
+                img(src = paste("pics", "bam_logo_20pt.gif", sep="/"), position = "absolute", margin = "auto", alt="BAM Logo"),
                 strong("BAM"), em("IsoCor"),
                 position="relative"
               )
             ),
-            column(width = 8, helpText(paste0("ver ", packageVersion("IsoCor"), " (", packageDate("IsoCor"), ") jan.lisec@bam.de"), align="right"))
+            column(width = 8, helpText(status_line, align="right"))
           ),
           tabsetPanel(
             tabPanel(
