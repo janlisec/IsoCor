@@ -3,18 +3,29 @@
 #'@description \code{iso_ratio} will calculate a robust estimate of an 
 #'  isotopic ratio between intensity values of 2 mass traces.
 #'
-#'@details tbd.
+#'@details Within \code{\link{ic_app}} we compute estimates for isotope ratios 
+#'  using raw data and several processing steps. \code{iso_ratio} is internally 
+#'  used to perform this calculation and could be used in an external data 
+#'  processing pipeline without the app context.
+#'  However, users would need to extract intensity vectors of isotope peaks 
+#'  from raw data independently.
+#'  ***Note!*** All non-finite values and x==0 will be removed before calculation.
 #'
 #'@param data data.frame with two columns specifying data for isotope 1 and 2 respectively.
 #'@param method Method to calculate the isotope ratio.
 #'@param thr Threshold between 0..1 to limit the peaks scans used in the calculation (1=all scans, 0=apex only).
 #'
-#'@return A single numeric value given the robsut ratio estimate calculated from data.
+#'@examples 
+#'peak1 <- 1+cos(x = seq(-pi, pi, length.out=100))
+#'peak2 <- 0.05*peak1*runif(n=100, min=1, max=1.01)
+#'iso_ratio(data=cbind(peak1, peak2))
+#'
+#'@return A single numeric value. The robust ratio estimate calculated from \code{data}.
 #'
 #'@importFrom pracma trapz
 #'@importFrom stats lm
 #'
-#'@keywords internal
+#'@export
 iso_ratio <- function(
   data = data.frame("X"=rnorm(10), "Y"=rnorm(10)),
   method = c("mean","area","slope")[1], 

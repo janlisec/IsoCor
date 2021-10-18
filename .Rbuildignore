@@ -3,3 +3,4 @@
 ^app\.R$
 ^www$
 ^rsconnect$
+global.R

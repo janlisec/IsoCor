@@ -1,10 +1,17 @@
 #'@title ic_app
 #'
-#'@description \code{ic_app} will start a shiny app.
+#'@description \code{ic_app} will start a shiny app that allows to upload raw 
+#'  data, process selectively and analyze different methods of ratio calculation
+#'  between two intensity traces.
 #'
-#'@details tbd.
+#'@details The app is described in detail in  
+#'  <\href{https://jali.shinyapps.io/IsoCor}{this publication}>.
+#'
+#'@references \url{https://jali.shinyapps.io/IsoCor}
 #'
 #'@return A shiny app object.
+#'
+#'@seealso \link{iso_ratio}
 #'
 #'@importFrom bsplus use_bs_tooltip bs_embed_tooltip %>%
 #'@importFrom DT DTOutput renderDT JS
@@ -38,7 +45,7 @@ ic_app <- function() {
                 position="relative"
               )
             ),
-            column(width = 8, helpText("ver 0.1.7 (2021-10-14) jan.lisec@bam.de", align="right"))
+            column(width = 8, helpText(paste0("ver ", packageVersion("IsoCor"), " (", packageDate("IsoCor"), ") jan.lisec@bam.de"), align="right"))
           ),
           tabsetPanel(
             tabPanel(
@@ -679,7 +686,6 @@ ic_app <- function() {
       y <- df[,"Mean Delta"]
       e <- df[,"RSD Delta"]
       par(mar = c(4.5, 4.5, 0.5, 0.5))
-      #browser()
       plot(x=range(x), y=range(rep(y,2)+rep(c(-1,1),each=length(y))*2*e), type="n", xlab="Zone [%] (values are slightly shifted to improve visibility)", ylab="Mean Delta")
       legend(x = "top", horiz=TRUE, pch=c(21,22,24), pt.bg=c(5:7), legend=levels(df[,"Ratio method"]))
       segments(x0 = x, y0 = y-2*e, y1 = y+2*e, col = cols)

@@ -5,7 +5,9 @@ account: jali
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 4828957
-bundleId: 5137575
+bundleId: 5142278
 url: https://jali.shinyapps.io/IsoCor/
-when: 1634198111.42732
-lastSyncTime: 1634198111.42831
+when: 1634303822.56493
+lastSyncTime: 1634303822.56493
+asMultiple: FALSE
+asStatic: FALSE

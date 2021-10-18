@@ -10,8 +10,17 @@ ic_app()
 A shiny app object.
 }
 \description{
-\code{ic_app} will start a shiny app.
+\code{ic_app} will start a shiny app that allows to upload raw
+data, process selectively and analyze different methods of ratio calculation
+between two intensity traces.
 }
 \details{
-tbd.
+The app is described in detail in
+<\href{https://jali.shinyapps.io/IsoCor}{this publication}>.
+}
+\references{
+\url{https://jali.shinyapps.io/IsoCor}
+}
+\seealso{
+\link{iso_ratio}
 }
