@@ -19,5 +19,8 @@ rm(DESC)
 #status_line <- paste0("ver ", "0.1.12", " (", "2021-10-18", ") jan.lisec@bam.de")
 # set resource path for BAM icon and other static www data
 shiny::addResourcePath(prefix = 'pics', directoryPath = 'inst/www')
+# load testdata in an extra environment
+tde <- new.env()
+utils::data(testdata, envir = tde)
 # set up an indicator object to tell the App that this is the shinyapp.io version
 app_destination <- "shiny.io"

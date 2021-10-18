@@ -30,8 +30,12 @@ ic_app <- function() {
 
   # some parameters which are set in global.R for online app but here for package version  
   if (!exists("app_destination")) {
+    # these values are specified as required in package context
+    # the analogous parameters for the app are set in global.R
     status_line <- paste0("ver ", packageVersion("IsoCor"), " (", packageDate("IsoCor"), ") jan.lisec@bam.de")
     shiny::addResourcePath(prefix = 'pics', directoryPath = paste(system.file(package = "IsoCor"), "www", sep="/"))
+    tde <- new.env()
+    utils::data(testdata, envir = tde)
   }
   
   # Define UI for application that draws a histogram
@@ -110,21 +114,7 @@ ic_app <- function() {
                     column(6, numericInput(inputId = "ic_par_coef", label = "coef", value = 0.9997, min=0.9, max=1.1, step=0.0001) %>% bs_embed_tooltip(title = "Define coef parameter for delta calculation."))
                   ),
                   h3("Peak table"),
-                  uiOutput("ic_peaks_type_msg"),
-                  div(id="div_ic_pt1", class="ptcell", fluidRow(column(2, h5("1")), column(10, selectInput(inputId = "ic_pt1", label = NULL, choices = c("sample","standard","discard"), selected = "standard")))),
-                  div(id="div_ic_pt2", class="ptcell", fluidRow(column(2, h5("2")), column(10, selectInput(inputId = "ic_pt2", label = NULL, choices = c("sample","standard","discard"))))),
-                  div(id="div_ic_pt3", class="ptcell", fluidRow(column(2, h5("3")), column(10, selectInput(inputId = "ic_pt3", label = NULL, choices = c("sample","standard","discard"))))),
-                  div(id="div_ic_pt4", class="ptcell", fluidRow(column(2, h5("4")), column(10, selectInput(inputId = "ic_pt4", label = NULL, choices = c("sample","standard","discard"))))),
-                  div(id="div_ic_pt5", class="ptcell", fluidRow(column(2, h5("5")), column(10, selectInput(inputId = "ic_pt5", label = NULL, choices = c("sample","standard","discard"))))),
-                  div(id="div_ic_pt6", class="ptcell", fluidRow(column(2, h5("6")), column(10, selectInput(inputId = "ic_pt6", label = NULL, choices = c("sample","standard","discard"))))),
-                  div(id="div_ic_pt7", class="ptcell", fluidRow(column(2, h5("7")), column(10, selectInput(inputId = "ic_pt7", label = NULL, choices = c("sample","standard","discard"))))),
-                  div(id="div_ic_pt8", class="ptcell", fluidRow(column(2, h5("8")), column(10, selectInput(inputId = "ic_pt8", label = NULL, choices = c("sample","standard","discard"))))),
-                  div(id="div_ic_pt9", class="ptcell", fluidRow(column(2, h5("9")), column(10, selectInput(inputId = "ic_pt9", label = NULL, choices = c("sample","standard","discard"))))),
-                  div(id="div_ic_pt10", class="ptcell", fluidRow(column(2, h5("10")), column(10, selectInput(inputId = "ic_pt10", label = NULL, choices = c("sample","standard","discard"))))),
-                  tags$head(tags$style(HTML(".ptcell .h5 { text-align: center; }"))),
-                  tags$head(tags$style(HTML(".ptcell .selectize-control { margin-bottom: 0px }"))),
-                  tags$head(tags$style(HTML(".ptcell .control-label { margin-bottom: 0px }"))),
-                  tags$head(tags$style(HTML(".ptcell .form-group { margin-bottom: 0px }")))
+                  uiOutput("ic_peaks_type_div")
                 )
               )
             ),
@@ -178,8 +168,6 @@ ic_app <- function() {
     options(shiny.maxRequestSize=30*1024^2) # BrukerFlex Files are >5MB
   
     # load testdata on app start
-    tde <- new.env()
-    utils::data(testdata, envir = tde)
     testdata <- get0(x = "testdata", envir = tde)
     
     ### setup reactive Values ####################################################
@@ -187,7 +175,7 @@ ic_app <- function() {
     spec_plots_xmin <- reactiveVal(0)
     spec_plots_xmax <- reactiveVal(10000)
     # the time range if cutting is applied
-    cut_range <- reactiveValues("min"=0, "max"=10000)
+    cut_range <- reactiveValues("min"=NULL, "max"=NULL)
     # the rt shift applied to samples for alignment
     rt_shift <- reactiveVal(0)
     # indicator if range cut is currently applied
@@ -216,7 +204,7 @@ ic_app <- function() {
     
     # peak detection function
     MALDIquant_peaks <- function(x) {
-      hWS <- ifelse(isolate(input$ic_par_halfWindowSize)>0, input$ic_par_halfWindowSize, 25)
+      hWS <- isolate(ifelse(input$ic_par_halfWindowSize>0, input$ic_par_halfWindowSize, 25))
       detectPeaks(
         object = x, 
         method = "MAD",
@@ -273,7 +261,7 @@ ic_app <- function() {
     
     # convert input tables into MALDIquant spectra format for selected MI trace and RT column
     ic_mi_spectra_raw <- reactive({
-      req(file_in(), input$ic_par_rt_col, input$ic_par_mi_col, cut_range, rt_shift())
+      req(file_in(), input$ic_par_rt_col, input$ic_par_mi_col, cut_range$min, rt_shift())
       validate(need(all(sapply(file_in(), function(x) { all(diff(x[,input$ic_par_rt_col])>0) })), message = "You selected a time column with non continuous values"))
       lapply(1:length(file_in()), function(k) {
         x <- file_in()[[k]]
@@ -294,7 +282,8 @@ ic_app <- function() {
     
     # convert input tables into MALDIquant spectra format for selected SI trace and RT column
     ic_si_spectra_raw <- reactive({
-      req(file_in(), input$ic_par_rt_col, input$ic_par_mi_col, cut_range)
+      req(file_in(), input$ic_par_rt_col, input$ic_par_mi_col, cut_range$min)
+      #browser()
       validate(need(all(sapply(file_in(), function(x) { all(diff(x[,input$ic_par_rt_col])>0) })), message = "You selected a time column with non continuous values"))
       lapply(1:length(file_in()), function(k) {
         x <- file_in()[[k]]
@@ -315,10 +304,10 @@ ic_app <- function() {
     
     # provide spectra based on processed raw data
     ic_mi_spectra <- reactive({
+      req(ic_mi_spectra_raw(), input$ic_par_halfWindowSize, input$ic_par_baseline_method, input$ic_par_peakpicking_SNR)
       input$ic_par_halfWindowSize
       input$ic_par_baseline_method
       input$ic_par_peakpicking_SNR
-      req(ic_mi_spectra_raw())
       MALDIquant_pre_process(ic_mi_spectra_raw())
     })
   
@@ -334,6 +323,7 @@ ic_app <- function() {
     # identify peaks in processed mi spectra
     ic_mi_peaks <- reactive({
       req(ic_mi_spectra())
+      #browser()
       disable(id = "ic_par_align_rt")
       lapply(ic_mi_spectra(), MALDIquant_peaks)
     })
@@ -373,22 +363,17 @@ ic_app <- function() {
       return(out)
     })
     
-    # mi peak-type table (to allow user a specification: c("sample","standard","discard"))
-    
-    max_peaks <- 10
-  
-    # mi peak-type table contains selectInput's for peak type and can be modified --> this modification needs to be observed here
+    # total number of valid peaks based on ic_table_peaks_pre()
     ic_n_valid_peaks <- reactive({
       req(ic_table_peaks_pre())
-      for (i in 1:max_peaks) { hide(id = paste0("div_ic_pt", i)) }
-      message("ic_n_valid_peaks")
       df <- ic_table_peaks_pre()
       np <- length(unique(df[,"Peak ID"]))
       validate(need(length(unique(table(df[,"Peak ID"])))==1, message = "Please select processing parameters to obtain a similar number of peaks in all files"))
       validate(need(np>=2, message = "Please select processing parameters to obtain at least 2 peaks in all files (1 sample and 1 standard peak)"))
-      validate(need(np<=max_peaks, message = paste("Can't handle more than", max_peaks, "peaks currently. Please send an e-mail to jan.lisec@bam.de if this is required.")))
       return(np)
     })
+    
+    # mi peak-type table contains selectInput's for peak type and can be modified --> this modification is evaluated here
     ic_table_peaks_type_mod <- reactive({
       req(ic_n_valid_peaks())
       message("ic_table_peaks_type_mod")
@@ -399,17 +384,6 @@ ic_app <- function() {
       }
       validate(need(all(c("sample","standard") %in% out[,"Type"]), message = "At least 1 peak must be defined as 'standard' and 1 as 'sample'"))
       return(out)
-    })
-    
-    observeEvent(ic_n_valid_peaks(), {
-      type <- c("standard", rep("sample", ic_n_valid_peaks()-2), "standard")
-      if (length(type)==2) type[2] <- "sample"
-      for (i in 1:ic_n_valid_peaks()) {
-        show(id = paste0("div_ic_pt", i))
-        if (input[[paste0("ic_pt", i)]] != type[i]) {
-          updateSelectInput(inputId = paste0("ic_pt", i), selected = type[i])
-        }
-      }
     })
     
     # mi/si ratio calculation
@@ -552,17 +526,19 @@ ic_app <- function() {
     
     # set cut range to displayed spectrum range when user triggers this action button
     observeEvent(input$ic_par_cut_range, {
-      req(cut_range, input$ic_par_rt_col, spec_plots_xmin(), spec_plots_xmax())
+      req(cut_range$min, input$ic_par_rt_col, spec_plots_xmin(), spec_plots_xmax())
       if (status_range_cut()=="off") {
         cut_range$min <- spec_plots_xmin()
         cut_range$max <- spec_plots_xmax()
         updateActionButton(inputId = "ic_par_cut_range", label = "undo cut")
+        #style="background-color: #337ab7;"
         status_range_cut("on")
       } else {
         rng <- sapply(file_in(), function(x) { range(x[,input$ic_par_rt_col], na.rm=TRUE) })
         cut_range$min <- min(rng[1,])
         cut_range$max <- max(rng[2,])
         updateActionButton(inputId = "ic_par_cut_range", label = "cut range")
+        #style="background-color: #337ab7;"
         status_range_cut("off")
       }
     })
@@ -575,11 +551,13 @@ ic_app <- function() {
         }), 1, median)
         rt_shift(out)
         updateActionButton(inputId = "ic_par_align_rt", label = "undo align")
+        #tags$head(tags$style(HTML(".btn-default #ic_par_align_rt{background-color:#93b193}")))
         status_align("on")
       } else {
         rt_shift(rep(0, length(file_in())))
         updateActionButton(inputId = "ic_par_align_rt", label = "align rt")
         status_align("off")
+        #tags$head(tags$style(HTML(".btn-default {background-color:#d45959}")))
       }
     })
     
@@ -587,10 +565,34 @@ ic_app <- function() {
     ### outputs ##################################################################
     ## UI output
     # peak-type table with user select inputs
-    output$ic_peaks_type_msg <- renderUI({
+    output$ic_peaks_type_div <- renderUI({
       ic_n_valid_peaks()
+      mini_div <- function(i) {
+        div(
+          id=paste0("div_ic_pt",i), 
+          class="ptcell", 
+          fluidRow(
+            column(width = 2, h5(i)), 
+            column(width = 10, selectInput(
+              inputId = paste0("ic_pt",i), 
+              label = NULL, 
+              choices = c("sample","standard","discard"),
+              selected = type[i]
+            ))
+          )
+        )
+      }
+      # specify initial peak-type vector
+      type <- c("standard", rep("sample", ic_n_valid_peaks()-2), "standard")
+      if (length(type)==2) type[2] <- "sample"
+      # return tagList and formatting options
       tagList(
-        fluidRow(column(2, strong("ID")), column(10, strong("Type")))
+        fluidRow(column(2, strong("ID")), column(10, strong("Type"))),
+        lapply(1:ic_n_valid_peaks(), mini_div),
+        tags$head(tags$style(HTML(".ptcell .h5 { text-align: center; }"))),
+        tags$head(tags$style(HTML(".ptcell .selectize-control { margin-bottom: 0px }"))),
+        tags$head(tags$style(HTML(".ptcell .control-label { margin-bottom: 0px }"))),
+        tags$head(tags$style(HTML(".ptcell .form-group { margin-bottom: 0px }"))),
       )
     })
     

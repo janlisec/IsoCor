@@ -5,5 +5,6 @@ rm(list = ls(all.names = TRUE)) # clean environment
 devtools::document('.') # create NAMESPACE and man
 devtools::load_all('.') # load package
 options(app.prod = FALSE) # TRUE = production mode, FALSE = development mode
-#shiny::runApp(appDir = 'inst/app') # run the main app
+#reactlog::reactlog_enable()
 shiny::runApp()
+#shiny::reactlogShow()
