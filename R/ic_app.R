@@ -684,7 +684,9 @@ ic_app <- function() {
             }
             if (idx==idx_all[1]) {
               at <- axTicks(side = 4)
-              at_val <- dfs[[1]][,"Ratio"][sapply(at, function(x) { which.min(abs(dfs[[1]][,"Ratio_norm"]-x)) })]
+              #browser()
+              #at_val <- dfs[[1]][,"Ratio"][sapply(at, function(x) { which.min(abs(dfs[[1]][,"Ratio_norm"]-x)) })]
+              at_val <- seq(rng_R[1], rng_R[2], length.out=length(at))
               at_test <- all(at_val<1)
               at_val <- round(ifelse(at_test,100,1)*at_val, ifelse(at_test,2,1))
               axis(side = 4, at=at, labels = at_val)
@@ -782,7 +784,9 @@ ic_app <- function() {
         points(x=dfs[[j]][,1], y=y2_norm, col=grey(0.9))
         #abline(h=mean(y2_norm, na.rm=T)+c(-1,0,1)*sd(y2_norm, na.rm=T), col=c(2,3,2))
         at <- axTicks(side = 4)
-        axis(side = 4, at=at, labels = round(100*y2[sapply(at, function(x) { which.min(abs(y2_norm-x)) })], 2), cex.axis=1.5)
+        #axis(side = 4, at=at, labels = round(100*y2[sapply(at, function(x) { which.min(abs(y2_norm-x)) })], 2), cex.axis=1.5)
+        axis(side = 4, at=at, labels = round(100*seq(yrng2[1], yrng2[2], length.out=length(at)), 2), cex.axis=1.5)
+        
       }
     })
   
