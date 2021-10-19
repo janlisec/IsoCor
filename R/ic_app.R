@@ -22,7 +22,7 @@
 #'@importFrom plyr ldply
 #'@importFrom shiny fluidPage sidebarLayout sidebarPanel fluidRow column selectInput fileInput tabsetPanel tabPanel plotOutput uiOutput mainPanel helpText numericInput actionButton checkboxInput radioButtons dblclickOpts brushOpts reactiveVal isolate reactive req need observeEvent updateSelectizeInput updateNumericInput renderPrint renderPlot renderUI shinyApp updateSelectInput validate reactiveValues updateCheckboxGroupInput updateActionButton updateTextInput checkboxGroupInput tagList textInput 
 #'@importFrom shinyjs useShinyjs hide show enable disable toggle
-#'@importFrom stats median rnorm sd
+#'@importFrom stats median rnorm sd quantile
 #'@importFrom utils data packageDate packageVersion
 #'
 #'@export
@@ -98,12 +98,12 @@ ic_app <- function() {
                   checkboxGroupInput(
                     inputId = "ic_par_specplot", 
                     label = "Plot options", 
-                    choices =  list("show peak boundaries"="overlay_pb",
-                                    "show all samples" = "overlay_mi",
+                    choices =  list("show all samples" = "overlay_mi",
+                                    "show peak boundaries"="overlay_pb",
+                                    "show sample IDs" = "overlay_legend",
                                     "overlay SI trace" = "overlay_si",
-                                    "show legend" = "overlay_legend",
-                                    "overlay drift" = "overlay_drift"), 
-                    selected = c("overlay_pb","overlay_mi")
+                                    "overlay ratio drift" = "overlay_drift"), 
+                    selected = c("overlay_pb","overlay_mi","overlay_drift")
                   ),
                   h3("Output"),
                   fluidRow(
@@ -111,7 +111,8 @@ ic_app <- function() {
                     column(6, numericInput(inputId = "ic_par_zone4", label = "Zone 4", value = 60, min=0, max=100, step=1) %>% bs_embed_tooltip(title = "Define zone level for output [range: 0..100]."))
                   ),
                   fluidRow(
-                    column(6, numericInput(inputId = "ic_par_coef", label = "coef", value = 0.9997, min=0.9, max=1.1, step=0.0001) %>% bs_embed_tooltip(title = "Define coef parameter for delta calculation."))
+                    column(6, numericInput(inputId = "ic_par_coef", label = "coef", value = 0.9997, min=0.9, max=1.1, step=0.0001) %>% bs_embed_tooltip(title = "Define coef parameter for delta calculation.")),
+                    column(6, numericInput(inputId = "ic_par_quantile", label = "quant", value = 0.1, min=0, max=0.25, step=0.01) %>% bs_embed_tooltip(title = "Define quant parameter to limit depicted drift value distribution."))
                   ),
                   h3("Peak table"),
                   uiOutput("ic_peaks_type_div")
@@ -186,13 +187,13 @@ ic_app <- function() {
     ### internal functions #######################################################
     # define the (pre) processing steps in a functions
     MALDIquant_pre_process <- function(x) {
-      if (isolate(input$ic_par_halfWindowSize)>0) {
-        x <- smoothIntensity(
-          object = x, 
-          method = "MovingAverage", 
-          halfWindowSize = isolate(input$ic_par_halfWindowSize)
-        )
-      }
+      # if (isolate(input$ic_par_halfWindowSize)>0) {
+      #   x <- smoothIntensity(
+      #     object = x, 
+      #     method = "MovingAverage", 
+      #     halfWindowSize = isolate(input$ic_par_halfWindowSize)
+      #   )
+      # }
       if (isolate(input$ic_par_baseline_method)!="none") {
         x <- removeBaseline(
           object = x, 
@@ -204,13 +205,28 @@ ic_app <- function() {
     
     # peak detection function
     MALDIquant_peaks <- function(x) {
+      if (isolate(input$ic_par_halfWindowSize)>0) {
+        x <- smoothIntensity(
+          object = x, 
+          method = "MovingAverage", 
+          halfWindowSize = isolate(input$ic_par_halfWindowSize)
+        )
+      }
       hWS <- isolate(ifelse(input$ic_par_halfWindowSize>0, input$ic_par_halfWindowSize, 25))
-      detectPeaks(
+      out <- detectPeaks(
         object = x, 
         method = "MAD",
         halfWindowSize = hWS,
         SNR = isolate(input$ic_par_peakpicking_SNR)
       )
+      out@metaData[["pb"]] <- ldply(out@mass, function(p) { 
+        find_peak_boundaries(
+          int = intensity(x), 
+          p = which.min(abs(mass(x) - p)),
+          k = 3, min_scans = 5
+        )
+      })
+      return(out)
     }
     
     ### reactives ################################################################
@@ -283,7 +299,6 @@ ic_app <- function() {
     # convert input tables into MALDIquant spectra format for selected SI trace and RT column
     ic_si_spectra_raw <- reactive({
       req(file_in(), input$ic_par_rt_col, input$ic_par_mi_col, cut_range$min)
-      #browser()
       validate(need(all(sapply(file_in(), function(x) { all(diff(x[,input$ic_par_rt_col])>0) })), message = "You selected a time column with non continuous values"))
       lapply(1:length(file_in()), function(k) {
         x <- file_in()[[k]]
@@ -323,7 +338,6 @@ ic_app <- function() {
     # identify peaks in processed mi spectra
     ic_mi_peaks <- reactive({
       req(ic_mi_spectra())
-      #browser()
       disable(id = "ic_par_align_rt")
       lapply(ic_mi_spectra(), MALDIquant_peaks)
     })
@@ -331,24 +345,27 @@ ic_app <- function() {
     # mi peak table
     ic_table_peaks_pre <- reactive({
       req(ic_mi_peaks())
+      #browser()
       out <- ldply(1:length(ic_mi_peaks()), function(i) {
         x <- ic_mi_peaks()[[i]]
         sm <- mass(ic_mi_spectra()[[i]])
-        si <- intensity(ic_mi_spectra()[[i]])
-        pm <- mass(ic_mi_peaks()[[i]])
+        #si <- intensity(ic_mi_spectra()[[i]])
+        #pm <- mass(ic_mi_peaks()[[i]])
         rnd_time <- 2
         ldply(1:length(x@mass), function(j) {
-          pb <- find_peak_boundaries(
-            int = si, 
-            p = which.min(abs(sm - pm[j])),
-            k = 3, min_scans = 5
-          )
+          #browser()
+          # pb <- find_peak_boundaries(
+          #   int = si, 
+          #   p = which.min(abs(sm - pm[j])),
+          #   k = 3, min_scans = 5
+          # )
+          pb <- unlist(x@metaData$pb[j,])
           data.frame(
             "Sample"=i, 
             "Peak ID"=j, 
-            "MT max"=round(x@mass[j], rnd_time), 
-            "MT start"=round(sm[pb[1]], rnd_time), 
-            "MT end"=round(sm[pb[2]], rnd_time),
+            "RT max"=round(x@mass[j], rnd_time), 
+            "RT start"=round(sm[pb[1]], rnd_time), 
+            "RT end"=round(sm[pb[2]], rnd_time),
             "Scan start"=pb[1], 
             "Scan end"=pb[2],
             "Scan length"=diff(pb),
@@ -435,8 +452,9 @@ ic_app <- function() {
       std_col <- grep("standard", colnames(out))
       dis_col <- grep("discard", colnames(out))
       for (j in 1:length(sam_col)) {
-        fac <- 1000*(input$ic_par_coef - 1)
-        out[,gsub("Ratio", "Delta", colnames(out)[sam_col[j]])] <- (out[,sam_col[j]]/apply(out[,std_col,drop=FALSE], 1, mean))*fac
+        #fac <- 1000*(input$ic_par_coef - 1)
+        #out[,gsub("Ratio", "Delta", colnames(out)[sam_col[j]])] <- (out[,sam_col[j]]/apply(out[,std_col,drop=FALSE], 1, mean))*fac
+        out[,gsub("Ratio", "Delta", colnames(out)[sam_col[j]])] <- 1000*((out[,sam_col[j]]/apply(out[,std_col,drop=FALSE], 1, mean))*input$ic_par_coef-1)
       }
       # remove discarded peaks here
       if (length(dis_col)>=1) {
@@ -547,7 +565,7 @@ ic_app <- function() {
     observeEvent(input$ic_par_align_rt, {
       if (status_align()=="off") {
         out <- apply(sapply(split(ic_table_peaks_pre(), ic_table_peaks_pre()[,"Peak ID"]), function(x) {
-          x[,"MT max"]-median(x[,"MT max"])
+          x[,"RT max"]-median(x[,"RT max"])
         }), 1, median)
         rt_shift(out)
         updateActionButton(inputId = "ic_par_align_rt", label = "undo align")
@@ -614,7 +632,7 @@ ic_app <- function() {
     ## plots
     # ...
     output$ic_specplot <- renderPlot({
-      req(file_in(), ic_mi_spectra(), ic_si_spectra())
+      req(file_in(), ic_mi_spectra(), ic_si_spectra(), input$ic_par_si_col_name, input$ic_par_mi_col_name)
       xrng <- c(spec_plots_xmin(), spec_plots_xmax())
       yrng <- c(0, max(sapply(c(ic_mi_spectra(), ic_si_spectra()), function(x) {max(x@intensity)})))
       par(mar = c(4.5, 4.5, 0.5, ifelse("overlay_drift" %in% input$ic_par_specplot, 4.5, 0.5)))
@@ -628,7 +646,6 @@ ic_app <- function() {
       }
       for (idx in idx_all) {
         if ("overlay_legend" %in% input$ic_par_specplot) {
-          #mtext(text = paste0("[",idx,"] ", names(file_in())[idx], "; n_peaks =", length(pm)), side = 3, line = -1.15*idx, adj = 0.02, font = 1, col=cols[idx])
           mtext(text = paste0("[",idx,"] ", names(file_in())[idx]), side = 3, line = -1.15*idx, adj = 0.02, font = 1, col=cols[idx])
         }
         sm <- mass(ic_mi_spectra()[[idx]])
@@ -645,30 +662,33 @@ ic_app <- function() {
           pks <- ic_table_peaks_pre()
           pks_sam <- pks[pks[,"Sample"]==idx,,drop=FALSE]
           # plot symbols at peak apex
-          points(x=mass(ic_mi_peaks()[[idx]]), y=intensity(ic_mi_peaks()[[idx]]), col = 1, pch = 21, bg = cols[idx])
+          #points(x=mass(ic_mi_peaks()[[idx]]), y=intensity(ic_mi_peaks()[[idx]]), col = 1, pch = 21, bg = cols[idx])
           if ("overlay_drift" %in% input$ic_par_specplot) {
             dfs <- lapply(pks_sam[,"Peak ID"], function(j) {
               pb <- c(pks_sam[j,"Scan start"], pks_sam[j,"Scan end"])
               out <- data.frame("RT"=sm[pb[1]:pb[2]], "Iso1" = si[pb[1]:pb[2]], "Iso2" = intensity(ic_si_spectra()[[idx]])[pb[1]:pb[2]])
               out[,"Ratio"] <- out[,3]/out[,2]
+              out[!is.finite(out[,"Ratio"]),"Ratio"] <- NA
               return(out)
             })
             max_I <- max(yrng)
-            min_R <- min(sapply(dfs, function(x) { min(x[is.finite(x[,"Ratio"]),"Ratio"])}))
+            rng_R <- range(sapply(dfs, function(x) { quantile(x[,"Ratio"], c(input$ic_par_quantile,1-input$ic_par_quantile), na.rm=TRUE) }))
             dfs <- lapply(dfs, function(x) {
               flt <- is.finite(x[,"Ratio"])
-              y <- x[flt,"Ratio"]-min_R
-              x[flt,"Ratio_norm"] <- max_I*y/max(y)
+              y <- x[flt,"Ratio"]-rng_R[1]
+              x[flt,"Ratio_norm"] <- y*(max_I/diff(rng_R))
               return(x)
             })
-            #browser()
             for (j in 1:length(dfs)) {
               points(x=dfs[[j]][,"RT"], y=dfs[[j]][,"Ratio_norm"], pch=".", col=cols[idx])
             }
             if (idx==idx_all[1]) {
               at <- axTicks(side = 4)
-              axis(side = 4, at=at, labels = round(dfs[[1]][,"Ratio"][sapply(at, function(x) { which.min(abs(dfs[[1]][,"Ratio_norm"]-x)) })], 4))
-              mtext(text = paste0(input$ic_par_si_col_name, "/", input$ic_par_mi_col_name), side = 4, adj=0.5, line=3)
+              at_val <- dfs[[1]][,"Ratio"][sapply(at, function(x) { which.min(abs(dfs[[1]][,"Ratio_norm"]-x)) })]
+              at_test <- all(at_val<1)
+              at_val <- round(ifelse(at_test,100,1)*at_val, ifelse(at_test,2,1))
+              axis(side = 4, at=at, labels = at_val)
+              mtext(text = paste0(input$ic_par_si_col_name, "/", input$ic_par_mi_col_name, ifelse(at_test," [%]","")), side = 4, adj=0.5, line=3)
             }
           }
           if ("overlay_pb" %in% input$ic_par_specplot) {
@@ -735,21 +755,34 @@ ic_app <- function() {
       pks_sam <- pks[pks[,"Sample"]==i,,drop=FALSE]
       dfs <- lapply(pks_sam[,"Peak ID"], function(j) {
         pb <- c(pks_sam[j,"Scan start"], pks_sam[j,"Scan end"])
-        return(data.frame("RT"=smM[pb[1]:pb[2]], "Iso1" = siM[pb[1]:pb[2]], "Iso2" = siS[pb[1]:pb[2]]))
+        out <- data.frame(
+          "RT"=smM[pb[1]:pb[2]], 
+          "Iso1" = siM[pb[1]:pb[2]], 
+          "Iso2" = siS[pb[1]:pb[2]],
+          "Ratio" = siS[pb[1]:pb[2]]/siM[pb[1]:pb[2]]
+        )
+        out[!is.finite(out[,"Ratio"]),"Ratio"] <- NA
+        return(out)
       })
+      #browser()
+      yrng <- range(sapply(dfs, function(x) {
+        range(x[,2], na.rm=TRUE)
+      }))
+      yrng2 <- range(sapply(dfs, function(x) {
+        quantile(x[,4], c(input$ic_par_quantile,1-input$ic_par_quantile), na.rm=TRUE)
+      }))
       ptps <- ic_table_peaks_type_mod()[,"Type"]
       isos <- paste(input$ic_par_si_col_name, input$ic_par_mi_col_name, sep="/")
       bl_method <- input$ic_par_baseline_method
       par(mfrow=c(1,length(ptps)))  
       for (j in 1:length(ptps)) {
-        plot(x=dfs[[j]][,1], y=dfs[[j]][,2], type="l", xlab="RT", ylab="Intensity (V)", main=ptps[j])
-        y2 <- dfs[[j]][,3]/dfs[[j]][,2]
-        flt <- is.finite(y2)
-        y2_norm <- max(dfs[[j]][,2])*(y2-min(y2[flt]))/(max(y2[flt])-min(y2[flt]))
+        plot(x=dfs[[j]][,1], y=dfs[[j]][,2], ylim=yrng, type="l", xlab="", ylab="", main=paste0("Sample ", i, ", Peak ", j, " (", ptps[j], ")"), cex.axis=1.5, cex.main=1.5)
+        y2 <- dfs[[j]][,"Ratio"]
+        y2_norm <- yrng[2]*(y2-yrng2[1])/(yrng2[2]-yrng2[1])
         points(x=dfs[[j]][,1], y=y2_norm, col=grey(0.9))
-        #browser()
+        #abline(h=mean(y2_norm, na.rm=T)+c(-1,0,1)*sd(y2_norm, na.rm=T), col=c(2,3,2))
         at <- axTicks(side = 4)
-        axis(side = 4, at=at, labels = round(y2[sapply(at, function(x) { which.min(abs(y2_norm-x)) })], 4))
+        axis(side = 4, at=at, labels = round(100*y2[sapply(at, function(x) { which.min(abs(y2_norm-x)) })], 2), cex.axis=1.5)
       }
     })
   
