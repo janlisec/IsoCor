@@ -1,0 +1,4 @@
+.gitlab/.*[.]md$
+dev/.*[.]R$
+dev
+.gitlab

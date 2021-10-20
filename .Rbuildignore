@@ -1,8 +1,11 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^app\.R$
-^inst\\dev$
 ^rsconnect$
+inst/dev/run_dev.R
 global.R
 .rcsignore
-inst\\dev\\run_dev.R
+.gitlab/.*[.]md$
+dev/.*[.]R$
+dev
+.gitlab
