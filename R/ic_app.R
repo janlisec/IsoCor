@@ -21,6 +21,7 @@
 #'@importFrom MALDIquant transformIntensity smoothIntensity removeBaseline detectPeaks createMassSpectrum mass intensity
 #'@importFrom plyr ldply
 #'@importFrom shiny fluidPage sidebarLayout sidebarPanel fluidRow column selectInput fileInput tabsetPanel tabPanel plotOutput uiOutput mainPanel helpText numericInput actionButton checkboxInput radioButtons dblclickOpts brushOpts reactiveVal isolate reactive req need observeEvent updateSelectizeInput updateNumericInput renderPrint renderPlot renderUI shinyApp updateSelectInput validate reactiveValues updateCheckboxGroupInput updateActionButton updateTextInput checkboxGroupInput tagList textInput 
+#'@importFrom shinyalert useShinyalert shinyalert
 #'@importFrom shinyjs useShinyjs hide show enable disable toggle
 #'@importFrom stats median rnorm sd quantile
 #'@importFrom utils data packageDate packageVersion
@@ -35,12 +36,13 @@ ic_app <- function() {
     status_line <- paste0("ver ", packageVersion("IsoCor"), " (", packageDate("IsoCor"), ") jan.lisec@bam.de")
     shiny::addResourcePath(prefix = 'pics', directoryPath = paste(system.file(package = "IsoCor"), "www", sep="/"))
     tde <- new.env()
-    utils::data(testdata, envir = tde)
+    utils::data("testdata", envir = tde)
   }
   
   # Define UI for application that draws a histogram
   ui <- tagList(
     useShinyjs(),
+    useShinyalert(),
     use_bs_tooltip(),
     fluidPage(
       sidebarLayout(
@@ -107,13 +109,23 @@ ic_app <- function() {
                   ),
                   h3("Output"),
                   fluidRow(
-                    column(6, numericInput(inputId = "ic_par_zone3", label = "Zone 3", value = 80, min=0, max=100, step=1) %>% bs_embed_tooltip(title = "Define zone level for output [range: 0..100].")),
-                    column(6, numericInput(inputId = "ic_par_zone4", label = "Zone 4", value = 60, min=0, max=100, step=1) %>% bs_embed_tooltip(title = "Define zone level for output [range: 0..100]."))
-                  ),
-                  fluidRow(
-                    column(6, numericInput(inputId = "ic_par_coef", label = "coef", value = 0.9997, min=0.9, max=1.1, step=0.0001) %>% bs_embed_tooltip(title = "Define coef parameter for delta calculation.")),
-                    column(6, numericInput(inputId = "ic_par_quantile", label = "quant", value = 0.1, min=0, max=0.25, step=0.01) %>% bs_embed_tooltip(title = "Define quant parameter to limit depicted drift value distribution."))
-                  ),
+                    column(
+                      width = 6, 
+                      div(style = "margin-bottom: 5px", fluidRow(column(12, strong("Zone values")))),
+                      fluidRow(
+                        column(6, actionButton(inputId = "ic_btn_add_zone", label = "add")),
+                        column(6, actionButton(inputId = "ic_btn_rem_zone", label = "rem"))
+                      )
+                    ),
+                    column(6, numericInput(inputId = "ic_par_coef", label = "coef", value = 0.9997, min=0.9, max=1.1, step=0.0001) %>% bs_embed_tooltip(title = "Define coef parameter for delta calculation."))
+                  ),                  
+                  fluidRow(column(12, 
+                    div(style = "margin-bottom: 5px", fluidRow(column(12, strong("Drift filter (lower, upper)")))),
+                    fluidRow(
+                      column(6, numericInput(inputId = "ic_par_quant_low", label = NULL, value = 0.1, min=0, max=0.25, step=0.01) %>% bs_embed_tooltip(title = "Define lower quantile parameter to limit depicted drift value distribution.")),
+                      column(6, numericInput(inputId = "ic_par_quant_high", label = NULL, value = 0.9, min=0.75, max=1, step=0.01) %>% bs_embed_tooltip(title = "Define upper quantile parameter to limit depicted drift value distribution."))
+                    )
+                  )),
                   h3("Peak table"),
                   uiOutput("ic_peaks_type_div")
                 )
@@ -403,17 +415,51 @@ ic_app <- function() {
       return(out)
     })
     
+    zones <- reactiveVal(c(1,0.95,0.8,0.5,0))
+    observeEvent(input$ic_btn_add_zone, {
+      shinyalert(
+        html = TRUE,
+        text = tagList(
+          helpText("Current values:", paste(100*zones(), collapse=", ")),
+          numericInput(inputId = session$ns("ic_btn_add_zone_value"), label = "Enter zone value to add", value = 0, min=0, max=99, step=1)
+        ),
+        cancelButtonText = "Cancel", confirmButtonText = "Add", showCancelButton = TRUE, size = "xs",
+        callbackR = function(value) {
+          if (value) {
+            tmp <- zones()
+            nv <- input$ic_btn_add_zone_value/100
+            if (is.numeric(nv) && is.finite(nv) && nv>=0 && nv<1) {
+              tmp <- unique(sort(c(tmp, nv), decreasing = TRUE))
+              zones(tmp)
+            }
+          }
+        }
+      )
+    })
+    observeEvent(input$ic_btn_rem_zone, {
+      shinyalert(
+        html = TRUE,
+        text = tagList(
+          #helpText("Current values:", paste(100*zones(), collapse=", ")),
+          selectInput(inputId = session$ns("ic_btn_rem_zone_value"), label = "Select zone value to remove", choices = 100*zones())
+        ),
+        cancelButtonText = "Cancel", confirmButtonText = "Rem", showCancelButton = TRUE, size = "xs",
+        callbackR = function(value) {
+          if (value) {
+            tmp <- zones()
+            if (length(tmp)>=2) {
+              tmp <- tmp[tmp != as.numeric(input$ic_btn_rem_zone_value)/100]
+              zones(tmp)
+            }
+          }
+        }
+      )
+    })
+    
     # mi/si ratio calculation
     ic_table_ratios_pre <- reactive({
-      req(ic_table_peaks_pre(), ic_si_spectra(), ic_mi_spectra(), ic_table_peaks_type_mod())
+      req(ic_table_peaks_pre(), ic_si_spectra(), ic_mi_spectra(), ic_table_peaks_type_mod(), zones())
       pks <- ic_table_peaks_pre()
-      zones <- c(1, 0.95)
-      if (is.numeric(input$ic_par_zone3)) {
-        zones <- c(zones,input$ic_par_zone3/100)
-      }
-      if (is.numeric(input$ic_par_zone4)) {
-        zones <- c(zones,input$ic_par_zone4/100)
-      }
       # For every sample...
       out <- ldply(1:length(ic_mi_peaks()), function(i) {
         x <- ic_mi_peaks()[[i]]
@@ -432,7 +478,7 @@ ic_app <- function() {
         # For every ratio method...
         ldply(c("mean","area","slope"), function(ratio_method) {
           # For every Zone value...
-          ldply(zones, function(zone) {
+          ldply(zones(), function(zone) {
             out <- data.frame(
               "Sample"=i, 
               "Isotopes"=isos,
@@ -462,6 +508,8 @@ ic_app <- function() {
       }
       # remove calculations for method=slope where zone<100%
       out <- out[!(out[,"Zone [%]"]<100 & out[,"Ratio method"]=="slope"),]
+      # remove calculations where Delta did not yield a finite value
+      out <- out[!(out[,"Zone [%]"]==0 & out[,"Ratio method"]=="area"),]
       # round values
       p_cols <- grep(" P", colnames(out))
       for (cols in p_cols) { out[,cols] <- round(out[,cols], 4) }
@@ -585,6 +633,10 @@ ic_app <- function() {
     # peak-type table with user select inputs
     output$ic_peaks_type_div <- renderUI({
       ic_n_valid_peaks()
+      # specify initial peak-type vector
+      type <- c("standard", rep("sample", ic_n_valid_peaks()-2), "standard")
+      if (length(type)==2) type[2] <- "sample"
+      # mini_div function
       mini_div <- function(i) {
         div(
           id=paste0("div_ic_pt",i), 
@@ -600,9 +652,6 @@ ic_app <- function() {
           )
         )
       }
-      # specify initial peak-type vector
-      type <- c("standard", rep("sample", ic_n_valid_peaks()-2), "standard")
-      if (length(type)==2) type[2] <- "sample"
       # return tagList and formatting options
       tagList(
         fluidRow(column(2, strong("ID")), column(10, strong("Type"))),
@@ -633,6 +682,7 @@ ic_app <- function() {
     # ...
     output$ic_specplot <- renderPlot({
       req(file_in(), ic_mi_spectra(), ic_si_spectra(), input$ic_par_si_col_name, input$ic_par_mi_col_name)
+      #message("redraw spec plot")
       xrng <- c(spec_plots_xmin(), spec_plots_xmax())
       yrng <- c(0, max(sapply(c(ic_mi_spectra(), ic_si_spectra()), function(x) {max(x@intensity)})))
       par(mar = c(4.5, 4.5, 0.5, ifelse("overlay_drift" %in% input$ic_par_specplot, 4.5, 0.5)))
@@ -672,7 +722,7 @@ ic_app <- function() {
               return(out)
             })
             max_I <- max(yrng)
-            rng_R <- range(sapply(dfs, function(x) { quantile(x[,"Ratio"], c(input$ic_par_quantile,1-input$ic_par_quantile), na.rm=TRUE) }))
+            rng_R <- range(sapply(dfs, function(x) { quantile(x[,"Ratio"], c(input$ic_par_quant_low,input$ic_par_quant_high), na.rm=TRUE) }))
             dfs <- lapply(dfs, function(x) {
               flt <- is.finite(x[,"Ratio"])
               y <- x[flt,"Ratio"]-rng_R[1]
@@ -737,7 +787,7 @@ ic_app <- function() {
       e <- df[,"RSD Delta"]
       par(mar = c(4.5, 4.5, 1.5, 0.5))
       plot(x=range(x)+c(-1,1)*0.1*diff(range(x)), y=range(rep(y,2)+rep(c(-1,1),each=length(y))*2*e), type="n", xlab="Zone [%] (values are slightly shifted to improve visibility)", ylab="Mean Delta", axes=F)
-      axis(2); axis(1, at=1:4, labels = x_ann); box()
+      axis(2); axis(1, at=1:length(x_ann), labels = x_ann); box()
       legend(x = "top", horiz=TRUE, pch=c(21,22,24), pt.bg=c(5:7), legend=levels(df[,"Ratio method"]))
       segments(x0 = x, y0 = y-2*e, y1 = y+2*e, col = cols)
       segments(x0 = x, y0 = y-2*e, y1 = y+2*e, col = cols)
@@ -771,7 +821,7 @@ ic_app <- function() {
         range(x[,2], na.rm=TRUE)
       }))
       yrng2 <- range(sapply(dfs, function(x) {
-        quantile(x[,4], c(input$ic_par_quantile,1-input$ic_par_quantile), na.rm=TRUE)
+        quantile(x[,4], c(input$ic_par_quant_low, input$ic_par_quant_high), na.rm=TRUE)
       }))
       ptps <- ic_table_peaks_type_mod()[,"Type"]
       isos <- paste(input$ic_par_si_col_name, input$ic_par_mi_col_name, sep="/")

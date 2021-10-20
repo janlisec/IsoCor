@@ -1,7 +1,7 @@
 Package: IsoCor
 Title: Analyze isotope ratios from ICP-MS measurements in a shiny app
-Version: 0.1.15
-Date: 2021-10-19
+Version: 0.1.16
+Date: 2021-10-20
 Authors@R: 
     person(
       given = "Jan", 
@@ -25,4 +25,5 @@ Imports:
     plyr,
     pracma,
     shiny,
+    shinyalert,
     shinyjs

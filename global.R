@@ -9,6 +9,7 @@ library('MALDIquant')
 library('plyr')
 library('pracma')
 library('shiny')
+library('shinyalert')
 library('shinyjs')
 #get package version and date for display
 DESC <- readLines("DESCRIPTION")
