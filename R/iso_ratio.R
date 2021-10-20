@@ -52,7 +52,7 @@ iso_ratio <- function(
   # apply your method of choice
   out <- switch(
     method,
-    "mean" = mean(data[,2]/data[,1], na.rm=TRUE),
+    "mean" = median(data[,2]/data[,1], na.rm=TRUE),
     # "area" = sum(at_data[,2])/sum(at_data[,1]),
     "area" = trapz(x = 1:length(data[,2]), y = data[,2]) / trapz(x = 1:length(data[,1]), y = data[,1]),
     "slope"= lm(data[,2] ~ data[,1])$coefficients[[2]]
