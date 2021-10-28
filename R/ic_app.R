@@ -36,7 +36,7 @@ ic_app <- function() {
     status_line <- paste0("ver ", packageVersion("IsoCor"), " (", packageDate("IsoCor"), ") jan.lisec@bam.de")
     shiny::addResourcePath(prefix = 'pics', directoryPath = paste(system.file(package = "IsoCor"), "www", sep="/"))
     tde <- new.env()
-    utils::data("testdata", envir = tde)
+    utils::data("testdata", package = "IsoCor", envir = tde)
   }
   
   # Define UI for application that draws a histogram
