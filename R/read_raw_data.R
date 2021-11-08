@@ -1,25 +1,67 @@
 #'@title read_raw_data
 #'
-#'@description \code{read_raw_data} will import data in exp file format.
+#'@description \code{read_raw_data} will import ICP MS data in various file formats.
 #'
-#'@details tbd.
+#'@details Try to specify 'format' parameter to find a method suitable for your 
+#'  files or select 'generic' which will import a tab delimited file with 3 columns
+#'  defining RT, MI and SI respectively.
 #'
 #'@param path Valid filepath.
 #'@param format Character, currently only 'exp' files are supported.
+#'
+#'@examples 
+#'str(read_raw_data(path=""))
 #'
 #'@return A data.frame.
 #'
 #'@importFrom utils read.delim
 #'
-#'@keywords internal
-read_raw_data <- function(path, format = "exp") {
-  df <- read.delim(path, sep="\t", header = T, nrow = 5500, check.names = FALSE)
-  df[, "Time"] <- paste0(substr(df[, "Time"], 1, 8), "." , substr(df[, "Time"], 10, 12))
-  df[, "Time"] <- as.POSIXct(df[, "Time"], format = "%H:%M:%OS")
-  df[, "Time"] <- as.numeric(df[, "Time"] - df[1, "Time"])
-  df[, "Minutes"] <- df$Time / 60
-  reord <- c(1:grep("Time",colnames(df)), ncol(df), (grep("Time",colnames(df))+1):(ncol(df)-1))
-  df <- df[,reord]
-  df <- df[,!apply(df, 2, function(x) {all(is.na(x))}), drop=FALSE]
+#'@export
+read_raw_data <- function(path, format = c("exp","icp","data","generic")) {
+  pk <- 1+sin(seq(-0.5*pi,1.5*pi,length.out=61))
+  df_default <- data.frame("Minutes"=(0:60)/60, "MI"=pk, "SI"=0.1*pk)
+  if (file.exists(path)) {
+    if (format=="exp") {
+      df <- read.delim(path, sep="\t", header = T, nrow = 5500, check.names = FALSE)
+      if ("Time" %in% colnames(df)) {
+        df[, "Time"] <- paste0(substr(df[, "Time"], 1, 8), "." , substr(df[, "Time"], 10, 12))
+        df[, "Time"] <- as.POSIXct(df[, "Time"], format = "%H:%M:%OS")
+        df[, "Time"] <- as.numeric(df[, "Time"] - df[1, "Time"])
+        df[, "Minutes"] <- df$Time / 60
+        reord <- c(1:grep("Time",colnames(df)), ncol(df), (grep("Time",colnames(df))+1):(ncol(df)-1))
+        df <- df[,reord]
+        df <- df[,!apply(df, 2, function(x) {all(is.na(x))}), drop=FALSE]
+      } else {
+        df <- df_default
+      }
+    }
+    if (format=="icp") {
+      ions <- strsplit(readLines(path, n=1), "\t")[[1]][-1]
+      df <- read.delim(path, sep="\t", skip = 6, check.names = FALSE, header=FALSE)
+      if (is.data.frame(df) && prod(dim(df))>=1) {
+        df <- df[,!apply(df, 2, function(x) { all(is.na(x)) })]
+        #length(ions)==(ncol(df)-1)
+        colnames(df) <- c("Minutes", ions)
+        df[,"Minutes"] <- df[,"Minutes"]/60
+      } else {
+        df <- df_default
+      }
+    }  
+    if (format=="data") {
+      df <- read.delim(path, sep=",", check.names = FALSE, header=TRUE)[,-c(1:2)]
+      if (is.data.frame(df) && prod(dim(df))>=1) {
+        colnames(df)[1] <- "Minutes"
+        colnames(df) <- gsub("^X","",colnames(df))
+        df[,"Minutes"] <- df[,"Minutes"]/60
+      } else {
+        df <- df_default
+      }
+    }  
+    if (format=="generic") {
+      df <- read.delim(path, sep="\t", check.names = FALSE, header=TRUE)
+    }  
+  } else {
+    df <- df_default
+  }
   return(df)
 }

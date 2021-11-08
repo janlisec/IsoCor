@@ -2,6 +2,7 @@
 
 export(ic_app)
 export(iso_ratio)
+export(read_raw_data)
 importFrom(DT,DTOutput)
 importFrom(DT,JS)
 importFrom(DT,renderDT)

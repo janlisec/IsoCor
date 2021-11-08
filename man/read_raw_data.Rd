@@ -4,7 +4,7 @@
 \alias{read_raw_data}
 \title{read_raw_data}
 \usage{
-read_raw_data(path, format = "exp")
+read_raw_data(path, format = c("exp", "icp", "data", "generic"))
 }
 \arguments{
 \item{path}{Valid filepath.}
@@ -15,9 +15,14 @@ read_raw_data(path, format = "exp")
 A data.frame.
 }
 \description{
-\code{read_raw_data} will import data in exp file format.
+\code{read_raw_data} will import ICP MS data in various file formats.
 }
 \details{
-tbd.
+Try to specify 'format' parameter to find a method suitable for your
+files or select 'generic' which will import a tab delimited file with 3 columns
+defining RT, MI and SI respectively.
 }
-\keyword{internal}
+\examples{
+str(read_raw_data(path=""))
+
+}

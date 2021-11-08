@@ -63,8 +63,9 @@ ic_app <- function() {
             tabPanel(
               title = "Data", p(""),
               fluidRow(
-                column(width = 6, selectInput(inputId = "ic_par_libsource", label = "Data source", choices = list("testdata", "upload files"), selected = "testdata")),
-                column(width = 6, fileInput(inputId = "ic_par_path_expfiles", label = "Select exp-Files", multiple = TRUE))
+                column(width = 4, selectInput(inputId = "ic_par_libsource", label = "Data source", choices = list("testdata", "upload files"), selected = "testdata")),
+                column(width = 4, selectInput(inputId = "ic_par_inputformat", label = "File format", choices = list("test", "exp", "icp", "data"), selected = "exp")),
+                column(width = 4, fileInput(inputId = "ic_par_path_expfiles", label = "Select Files", multiple = TRUE))
               )
             ),
             tabPanel(
@@ -247,7 +248,9 @@ ic_app <- function() {
       req(input$ic_par_libsource)
       if (input$ic_par_libsource=="upload files") {
         if (!is.null(input$ic_par_path_expfiles)) {
-          out <- lapply(input$ic_par_path_expfiles$datapath, read_raw_data)
+          out <- lapply(input$ic_par_path_expfiles$datapath, function(x) {
+            read_raw_data(path=x, format=input$ic_par_inputformat)
+          })
           names(out) <- input$ic_par_path_expfiles$name
         } else {
           out <- NULL
@@ -291,6 +294,7 @@ ic_app <- function() {
     ic_mi_spectra_raw <- reactive({
       req(file_in(), input$ic_par_rt_col, input$ic_par_mi_col, cut_range$min, rt_shift())
       validate(need(all(sapply(file_in(), function(x) { all(diff(x[,input$ic_par_rt_col])>0) })), message = "You selected a time column with non continuous values"))
+      validate(need(all(c(input$ic_par_rt_col, input$ic_par_mi_col) %in% file_in_cols()), message = "Selected columns inconsistent with currently uploaded data"))
       lapply(1:length(file_in()), function(k) {
         x <- file_in()[[k]]
         m <- x[, input$ic_par_rt_col]
@@ -312,6 +316,7 @@ ic_app <- function() {
     ic_si_spectra_raw <- reactive({
       req(file_in(), input$ic_par_rt_col, input$ic_par_mi_col, cut_range$min)
       validate(need(all(sapply(file_in(), function(x) { all(diff(x[,input$ic_par_rt_col])>0) })), message = "You selected a time column with non continuous values"))
+      validate(need(all(c(input$ic_par_rt_col, input$ic_par_si_col) %in% file_in_cols()), message = "Selected columns inconsistent with currently uploaded data"))
       lapply(1:length(file_in()), function(k) {
         x <- file_in()[[k]]
         m <- x[, input$ic_par_rt_col]
@@ -357,7 +362,6 @@ ic_app <- function() {
     # mi peak table
     ic_table_peaks_pre <- reactive({
       req(ic_mi_peaks())
-      #browser()
       out <- ldply(1:length(ic_mi_peaks()), function(i) {
         x <- ic_mi_peaks()[[i]]
         sm <- mass(ic_mi_spectra()[[i]])
@@ -365,7 +369,6 @@ ic_app <- function() {
         #pm <- mass(ic_mi_peaks()[[i]])
         rnd_time <- 2
         ldply(1:length(x@mass), function(j) {
-          #browser()
           # pb <- find_peak_boundaries(
           #   int = si, 
           #   p = which.min(abs(sm - pm[j])),
@@ -557,13 +560,28 @@ ic_app <- function() {
     # show fileUpload only when data source is set to 'upload files'
     observeEvent(input$ic_par_libsource, {
       toggle(id = "ic_par_path_expfiles", condition = input$ic_par_libsource=="upload files")
+      toggle(id = "ic_par_inputformat", condition = input$ic_par_libsource=="upload files")
     })
     
     # update column selectors when input columns change  
-    observeEvent(file_in_cols, {
-      updateSelectInput(inputId = "ic_par_rt_col", choices = I(file_in_cols()), selected = file_in_cols()[3])
-      updateSelectInput(inputId = "ic_par_mi_col", choices = I(file_in_cols()), selected = file_in_cols()[7])
-      updateSelectInput(inputId = "ic_par_si_col", choices = I(file_in_cols()), selected = file_in_cols()[9])
+    observeEvent(file_in_cols(), {
+      mi_selected <- switch(
+        input$ic_par_inputformat, 
+        "exp"=file_in_cols()[7], 
+        "icp"=file_in_cols()[2],
+        "test"=file_in_cols()[2],
+        "data"=file_in_cols()[2],
+        file_in_cols()[2])
+      si_selected <- switch(
+        input$ic_par_inputformat, 
+        "exp"=file_in_cols()[9], 
+        "icp"=file_in_cols()[4],
+        "test"=file_in_cols()[3],
+        "data"=file_in_cols()[3],
+        file_in_cols()[3])
+      updateSelectInput(inputId = "ic_par_rt_col", choices = I(file_in_cols()), selected = "Minutes")
+      updateSelectInput(inputId = "ic_par_mi_col", choices = I(file_in_cols()), selected = mi_selected)
+      updateSelectInput(inputId = "ic_par_si_col", choices = I(file_in_cols()), selected = si_selected)
     })
     
     # check and update time range filters when time column is changed
@@ -734,7 +752,6 @@ ic_app <- function() {
             }
             if (idx==idx_all[1]) {
               at <- axTicks(side = 4)
-              #browser()
               #at_val <- dfs[[1]][,"Ratio"][sapply(at, function(x) { which.min(abs(dfs[[1]][,"Ratio_norm"]-x)) })]
               at_val <- seq(rng_R[1], rng_R[2], length.out=length(at))
               at_test <- all(at_val<1)
@@ -816,7 +833,6 @@ ic_app <- function() {
         out[!is.finite(out[,"Ratio"]),"Ratio"] <- NA
         return(out)
       })
-      #browser()
       yrng <- range(sapply(dfs, function(x) {
         range(x[,2], na.rm=TRUE)
       }))
