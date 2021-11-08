@@ -32,7 +32,8 @@ read_raw_data <- function(path, format = c("exp","icp","data","generic")) {
         df <- df[,reord]
         df <- df[,!apply(df, 2, function(x) {all(is.na(x))}), drop=FALSE]
       } else {
-        df <- df_default
+        #df <- df_default
+        df <- NULL
       }
     }
     if (format=="icp") {
@@ -44,7 +45,8 @@ read_raw_data <- function(path, format = c("exp","icp","data","generic")) {
         colnames(df) <- c("Minutes", ions)
         df[,"Minutes"] <- df[,"Minutes"]/60
       } else {
-        df <- df_default
+        #df <- df_default
+        df <- NULL
       }
     }  
     if (format=="data") {
@@ -54,14 +56,16 @@ read_raw_data <- function(path, format = c("exp","icp","data","generic")) {
         colnames(df) <- gsub("^X","",colnames(df))
         df[,"Minutes"] <- df[,"Minutes"]/60
       } else {
-        df <- df_default
+        #df <- df_default
+        df <- NULL
       }
     }  
     if (format=="generic") {
       df <- read.delim(path, sep="\t", check.names = FALSE, header=TRUE)
     }  
   } else {
-    df <- df_default
+    #df <- df_default
+    df <- NULL
   }
   return(df)
 }

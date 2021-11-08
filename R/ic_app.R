@@ -64,8 +64,9 @@ ic_app <- function() {
               title = "Data", p(""),
               fluidRow(
                 column(width = 4, selectInput(inputId = "ic_par_libsource", label = "Data source", choices = list("testdata", "upload files"), selected = "testdata")),
-                column(width = 4, selectInput(inputId = "ic_par_inputformat", label = "File format", choices = list("test", "exp", "icp", "data"), selected = "exp")),
-                column(width = 4, fileInput(inputId = "ic_par_path_expfiles", label = "Select Files", multiple = TRUE))
+                column(width = 4, selectInput(inputId = "ic_par_inputformat", label = "File format", choices = list("exp", "icp", "data", "generic"), selected = "exp")),
+                #column(width = 4, fileInput(inputId = "ic_par_path_expfiles", label = "Select Files", multiple = TRUE))
+                column(width = 4, uiOutput(outputId = "ic_par_path_expfiles"))
               )
             ),
             tabPanel(
@@ -144,7 +145,7 @@ ic_app <- function() {
             height = "400px", 
             dblclick = dblclickOpts(id = "ic_specplot_dblclick"), 
             brush = brushOpts(id = "ic_specplot_brush", direction = "x", resetOnNew = TRUE)
-          ) %>% bs_embed_tooltip(title = "You may select a mass range [Click and Drag] with the cursor to zoom. Use [Double Click] to unzoom.", placement = "left"),
+          ) %>% bs_embed_tooltip(title = "You may select a time range [Click and Drag] with the cursor to zoom. Use [Double Click] to unzoom.", placement = "left"),
           tabsetPanel(
             tabPanel(
               title = "Peak table", p(""),
@@ -183,6 +184,12 @@ ic_app <- function() {
   
     # load testdata on app start
     testdata <- get0(x = "testdata", envir = tde)
+    
+    output$ic_par_path_expfiles <- renderUI({
+      # file input as renderUI to allow a reset in case that the upload method is changed
+      message(input$ic_par_inputformat)
+      fileInput(inputId = "ic_par_path_expfiles", label = "Select Files", multiple = TRUE)
+    })
     
     ### setup reactive Values ####################################################
     # setup plot range (min, max)
@@ -246,35 +253,36 @@ ic_app <- function() {
     # get input data as list of tables
     file_in <- reactive({
       req(input$ic_par_libsource)
+      out <- NULL
       if (input$ic_par_libsource=="upload files") {
         if (!is.null(input$ic_par_path_expfiles)) {
-          out <- lapply(input$ic_par_path_expfiles$datapath, function(x) {
+          out <- try(lapply(input$ic_par_path_expfiles$datapath, function(x) {
             read_raw_data(path=x, format=input$ic_par_inputformat)
-          })
-          names(out) <- input$ic_par_path_expfiles$name
+          }))
+          if (class(out)=="try-error") {
+            out <- NULL
+          } else {
+            names(out) <- input$ic_par_path_expfiles$name
+          }
         } else {
           out <- NULL
         }
       } else {
+        updateSelectInput(inputId = "ic_par_inputformat", selected="exp")
         out <- testdata
-        #out <- lapply(dir(path = "www", pattern = ".exp$", full.names = TRUE), read_raw_data)
-        #names(out) <- dir(path = "www", pattern = ".exp$")
       }
       if (!is.null(out)) {
         rt_shift(rep(0, length(out)))
         updateSelectInput(inputId = "ic_par_focus_sample", choices = paste("Sample", 1:length(out)))
         if (length(out)>1) {
           enable(selector = "#ic_par_specplot input[value='overlay_mi']")
-          #show(id = "ic_par_focus_sample")
         } else {
-          updateCheckboxGroupInput(
-            inputId = "ic_par_specplot",
-            selected = c("overlay_pb", "overlay_si")
-          )
+          updateCheckboxGroupInput(inputId = "ic_par_specplot", selected = c("overlay_pb", "overlay_si"))
           disable(selector = "#ic_par_specplot input[value='overlay_mi']")
           hide(id = "ic_par_focus_sample")
         }
       }
+      validate(need(out, message = "No valid data"))
       return(out)
     })
     
@@ -563,31 +571,9 @@ ic_app <- function() {
       toggle(id = "ic_par_inputformat", condition = input$ic_par_libsource=="upload files")
     })
     
-    # update column selectors when input columns change  
-    observeEvent(file_in_cols(), {
-      mi_selected <- switch(
-        input$ic_par_inputformat, 
-        "exp"=file_in_cols()[7], 
-        "icp"=file_in_cols()[2],
-        "test"=file_in_cols()[2],
-        "data"=file_in_cols()[2],
-        file_in_cols()[2])
-      si_selected <- switch(
-        input$ic_par_inputformat, 
-        "exp"=file_in_cols()[9], 
-        "icp"=file_in_cols()[4],
-        "test"=file_in_cols()[3],
-        "data"=file_in_cols()[3],
-        file_in_cols()[3])
-      updateSelectInput(inputId = "ic_par_rt_col", choices = I(file_in_cols()), selected = "Minutes")
-      updateSelectInput(inputId = "ic_par_mi_col", choices = I(file_in_cols()), selected = mi_selected)
-      updateSelectInput(inputId = "ic_par_si_col", choices = I(file_in_cols()), selected = si_selected)
-    })
-    
-    # check and update time range filters when time column is changed
-    observeEvent(input$ic_par_rt_col, {
-      req(file_in())
-      # reset cut range and...
+    # reset time windows (upon new data or new RT column)
+    reset_times <- function() {
+      req(file_in(), input$ic_par_rt_col)
       rng <- sapply(file_in(), function(x) { range(x[,input$ic_par_rt_col], na.rm=TRUE) })
       cut_range$min <- min(rng[1,])
       cut_range$max <- max(rng[2,])
@@ -596,6 +582,42 @@ ic_app <- function() {
       # ...reset display range
       spec_plots_xmin(cut_range$min)
       spec_plots_xmax(cut_range$max)
+    }
+    
+    # update column selectors when input columns change  
+    observeEvent(file_in_cols(), {
+      mi_selected <- switch(
+        input$ic_par_inputformat, 
+        "exp"=file_in_cols()[7], 
+        "icp"=file_in_cols()[2],
+        "generic"=file_in_cols()[2],
+        "data"=file_in_cols()[2])
+      si_selected <- switch(
+        input$ic_par_inputformat, 
+        "exp"=file_in_cols()[9], 
+        "icp"=file_in_cols()[4],
+        "generic"=file_in_cols()[3],
+        "data"=file_in_cols()[3])
+      updateSelectInput(inputId = "ic_par_rt_col", choices = I(file_in_cols()), selected = "Minutes")
+      updateSelectInput(inputId = "ic_par_mi_col", choices = I(file_in_cols()), selected = mi_selected)
+      updateSelectInput(inputId = "ic_par_si_col", choices = I(file_in_cols()), selected = si_selected)
+      reset_times()
+    })
+    
+    # check and update time range filters when time column is changed
+    observeEvent(input$ic_par_rt_col, {
+      req(file_in())
+      # browser()
+      # # reset cut range and...
+      # rng <- sapply(file_in(), function(x) { range(x[,input$ic_par_rt_col], na.rm=TRUE) })
+      # cut_range$min <- min(rng[1,])
+      # cut_range$max <- max(rng[2,])
+      # status_range_cut("off")
+      # updateActionButton(inputId = "ic_par_cut_range", label = "cut range")
+      # # ...reset display range
+      # spec_plots_xmin(cut_range$min)
+      # spec_plots_xmax(cut_range$max)
+      reset_times()
     }, ignoreInit = TRUE)
     
     # update MI/SI name inputs when input columns change

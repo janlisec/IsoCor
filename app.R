@@ -1,4 +1,5 @@
 # shinyApp
+# devtools::load_all(".")
 # rsconnect::deployApp(appName = "IsoCor", forceUpdate = TRUE)
 # rsconnect::showLogs()
 options(shiny.autoload.r=FALSE)
