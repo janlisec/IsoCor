@@ -18,14 +18,16 @@
 #'
 #'@export
 read_raw_data <- function(path, format = c("exp","icp","data","generic")) {
-  pk <- 1+sin(seq(-0.5*pi,1.5*pi,length.out=61))
-  df_default <- data.frame("Minutes"=(0:60)/60, "MI"=pk, "SI"=0.1*pk)
+  #pk <- 1+sin(seq(-0.5*pi,1.5*pi,length.out=61))
+  #df_default <- data.frame("Minutes"=(0:60)/60, "MI"=pk, "SI"=0.1*pk)
   if (file.exists(path)) {
     if (format=="exp") {
       comment_lines <- grep("^[*]", readLines(path))
-      comment_lines <- ifelse(length(comment_lines)>=1, min(comment_lines)-1, NULL)
-      df <- read.delim(path, sep="\t", header = T, check.names = FALSE, nrows = comment_lines)
-      df <- df[-grep("[***]",df[,1]),]
+      if (length(comment_lines)>=1) {
+        df <- read.delim(path, sep="\t", header = T, check.names = FALSE, nrows = min(comment_lines)-1)
+      } else {
+        df <- read.delim(path, sep="\t", header = T, check.names = FALSE)
+      }
       if ("Time" %in% colnames(df)) {
         df[, "Time"] <- paste0(substr(df[, "Time"], 1, 8), "." , substr(df[, "Time"], 10, 12))
         df[, "Time"] <- as.POSIXct(df[, "Time"], format = "%H:%M:%OS")

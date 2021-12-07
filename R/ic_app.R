@@ -20,7 +20,7 @@
 #'@importFrom htmltools HTML tags h2 h3 h5 div strong em p img
 #'@importFrom MALDIquant transformIntensity smoothIntensity removeBaseline detectPeaks createMassSpectrum mass intensity
 #'@importFrom plyr ldply
-#'@importFrom shiny fluidPage sidebarLayout sidebarPanel fluidRow column selectInput fileInput tabsetPanel tabPanel plotOutput uiOutput mainPanel helpText numericInput actionButton checkboxInput radioButtons dblclickOpts brushOpts reactiveVal isolate reactive req need observeEvent updateSelectizeInput updateNumericInput renderPrint renderPlot renderUI shinyApp updateSelectInput validate reactiveValues updateCheckboxGroupInput updateActionButton updateTextInput checkboxGroupInput tagList textInput 
+#'@importFrom shiny addResourcePath fluidPage sidebarLayout sidebarPanel fluidRow column selectInput fileInput tabsetPanel tabPanel plotOutput uiOutput mainPanel helpText numericInput actionButton checkboxInput radioButtons dblclickOpts brushOpts reactiveVal isolate reactive req need observeEvent updateSelectizeInput updateNumericInput renderPrint renderPlot renderUI shinyApp updateSelectInput validate reactiveValues updateCheckboxGroupInput updateActionButton updateTextInput checkboxGroupInput tagList textInput 
 #'@importFrom shinyalert useShinyalert shinyalert
 #'@importFrom shinyjs useShinyjs hide show enable disable toggle
 #'@importFrom stats median rnorm sd quantile
@@ -725,6 +725,7 @@ ic_app <- function() {
       #message("redraw spec plot")
       xrng <- c(spec_plots_xmin(), spec_plots_xmax())
       yrng <- c(0, max(sapply(c(ic_mi_spectra(), ic_si_spectra()), function(x) {max(x@intensity)})))
+      #if (min(yrng)<0) {browser()}
       par(mar = c(4.5, 4.5, 0.5, ifelse("overlay_drift" %in% input$ic_par_specplot, 4.5, 0.5)))
       plot(x = xrng, y = yrng, type = "n", xaxs = "i", xlab=paste0("Time [", input$ic_par_mi_rt_unit, "]"), ylab="Intensity [V]")
       if ("overlay_mi" %in% input$ic_par_specplot) {

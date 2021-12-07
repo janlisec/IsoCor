@@ -27,3 +27,5 @@ Imports:
     shiny,
     shinyalert,
     shinyjs
+Suggests:
+    testthat (>= 3.0.0)
