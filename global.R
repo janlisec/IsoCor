@@ -1,7 +1,4 @@
 #load all libraries which are used within the package and stop if not sucessful
-# stopifnot(all(
-#   sapply(unique(packrat:::ns_imports("IsoCor")[[1]]), library, character.only = TRUE, logical.return=TRUE)
-# ))
 library('bsplus')
 library('DT')
 library('htmltools')

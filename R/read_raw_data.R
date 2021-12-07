@@ -22,7 +22,10 @@ read_raw_data <- function(path, format = c("exp","icp","data","generic")) {
   df_default <- data.frame("Minutes"=(0:60)/60, "MI"=pk, "SI"=0.1*pk)
   if (file.exists(path)) {
     if (format=="exp") {
-      df <- read.delim(path, sep="\t", header = T, nrow = 5500, check.names = FALSE)
+      comment_lines <- grep("^[*]", readLines(path))
+      comment_lines <- ifelse(length(comment_lines)>=1, min(comment_lines)-1, NULL)
+      df <- read.delim(path, sep="\t", header = T, check.names = FALSE, nrows = comment_lines)
+      df <- df[-grep("[***]",df[,1]),]
       if ("Time" %in% colnames(df)) {
         df[, "Time"] <- paste0(substr(df[, "Time"], 1, 8), "." , substr(df[, "Time"], 10, 12))
         df[, "Time"] <- as.POSIXct(df[, "Time"], format = "%H:%M:%OS")
@@ -32,20 +35,17 @@ read_raw_data <- function(path, format = c("exp","icp","data","generic")) {
         df <- df[,reord]
         df <- df[,!apply(df, 2, function(x) {all(is.na(x))}), drop=FALSE]
       } else {
-        #df <- df_default
         df <- NULL
       }
     }
     if (format=="icp") {
-      ions <- strsplit(readLines(path, n=1), "\t")[[1]][-1]
       df <- read.delim(path, sep="\t", skip = 6, check.names = FALSE, header=FALSE)
-      if (is.data.frame(df) && prod(dim(df))>=1) {
+      if (is.data.frame(df) && prod(dim(df))>=1 && is.numeric(df[,1]) && all(diff(df[,1])>=0)) {
+        ions <- strsplit(readLines(path, n=1), "\t")[[1]][-1]
         df <- df[,!apply(df, 2, function(x) { all(is.na(x)) })]
-        #length(ions)==(ncol(df)-1)
         colnames(df) <- c("Minutes", ions)
         df[,"Minutes"] <- df[,"Minutes"]/60
       } else {
-        #df <- df_default
         df <- NULL
       }
     }  
@@ -56,15 +56,18 @@ read_raw_data <- function(path, format = c("exp","icp","data","generic")) {
         colnames(df) <- gsub("^X","",colnames(df))
         df[,"Minutes"] <- df[,"Minutes"]/60
       } else {
-        #df <- df_default
         df <- NULL
       }
     }  
     if (format=="generic") {
-      df <- read.delim(path, sep="\t", check.names = FALSE, header=TRUE)
+      df <- try(read.delim(path, sep="\t", check.names = FALSE, header=TRUE))
+      if (is.data.frame(df) && ncol(df)>=3 && sum(apply(df, 2, is.numeric))>=3) {
+        # no further assumptions made
+      } else {
+        df <- NULL
+      }
     }  
   } else {
-    #df <- df_default
     df <- NULL
   }
   return(df)
