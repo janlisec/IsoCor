@@ -432,14 +432,14 @@ ic_app <- function() {
         html = TRUE,
         text = tagList(
           helpText("Current values:", paste(100*zones(), collapse=", ")),
-          numericInput(inputId = session$ns("ic_btn_add_zone_value"), label = "Enter zone value to add", value = 0, min=0, max=99, step=1)
+          numericInput(inputId = session$ns("ic_btn_add_zone_value"), label = "Enter zone value to add", value = 0, min=0, max=100, step=1)
         ),
         cancelButtonText = "Cancel", confirmButtonText = "Add", showCancelButton = TRUE, size = "xs",
         callbackR = function(value) {
           if (value) {
             tmp <- zones()
             nv <- input$ic_btn_add_zone_value/100
-            if (is.numeric(nv) && is.finite(nv) && nv>=0 && nv<1) {
+            if (is.numeric(nv) && is.finite(nv) && nv>=0 && nv<=1) {
               tmp <- unique(sort(c(tmp, nv), decreasing = TRUE))
               zones(tmp)
             }
