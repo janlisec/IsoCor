@@ -22,13 +22,13 @@
 #'
 #'@return A single numeric value. The robust ratio estimate calculated from \code{data}.
 #'
-#'@importFrom pracma trapz
 #'@importFrom stats lm
 #'
 #'@export
 iso_ratio <- function(
   data = data.frame("X"=rnorm(10), "Y"=rnorm(10)),
-  method = c("mean","area","slope")[1], 
+  #method = c("mean","area","slope")[1], 
+  method = c("PBP","PAI","LRS")[1],
   thr = 1) {
   
   # test if data and thr numeric
@@ -42,7 +42,7 @@ iso_ratio <- function(
     all(is.finite(x)) && all(x>0)
   })
   if (any(!flt)) {
-    message(paste("[iso_ratio] Did remove", sum(!flt), "Scans due to missing or 0 values"))
+    #message(paste("[iso_ratio] Did remove", sum(!flt), "Scans due to missing or 0 values"))
     data <- data[flt,]
   }
   
@@ -52,10 +52,10 @@ iso_ratio <- function(
   # apply your method of choice
   out <- switch(
     method,
-    "mean" = median(data[,2]/data[,1], na.rm=TRUE),
-    # "area" = sum(at_data[,2])/sum(at_data[,1]),
-    "area" = trapz(x = 1:length(data[,2]), y = data[,2]) / trapz(x = 1:length(data[,1]), y = data[,1]),
-    "slope"= lm(data[,2] ~ data[,1])$coefficients[[2]]
+    "PBP" = median(data[,2]/data[,1], na.rm=TRUE),
+    "PAI" = sum(data[,2])/sum(data[,1]),
+    #"area" = pracma::trapz(x = 1:length(data[,2]), y = data[,2]) / pracma::trapz(x = 1:length(data[,1]), y = data[,1]),
+    "LRS" = lm(data[,2] ~ data[,1])$coefficients[[2]]
   )
   
   return(out)
