@@ -6,7 +6,7 @@
 \usage{
 iso_ratio(
   data = data.frame(X = rnorm(10), Y = rnorm(10)),
-  method = c("mean", "area", "slope")[1],
+  method = c("PBP", "PAI", "LRS")[1],
   thr = 1
 )
 }

@@ -11,6 +11,11 @@
 #'
 #'@return A numeric vector of length 2 giving the indexes of peak start and peak end.
 #'
+#'@examples
+#'x <- sin(seq(-pi,2*pi,0.01))+1
+#'plot(x)
+#'abline(v=IsoCor:::find_peak_boundaries(x))
+#' 
 #'@keywords internal
 find_peak_boundaries <- function(int=NULL, p=which.max(int), k=3, min_scans=3) {
   int[!is.finite(int)] <- 0
