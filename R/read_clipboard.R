@@ -96,12 +96,9 @@ read_clipboard_Server <- function(id, btn_txt=shiny::reactiveVal(NULL), n_rows=s
       # ensure n columns
       Err_Msg(test = ncol(tmp)>=n_cols(), message = paste("The pasted data appears to have less than", n_cols(), "columns"))
       out$d <- tmp
+      out$counter <- out$counter+1
       shinyjs::hide(id = "area_input")
     }, ignoreInit = TRUE)
-    
-    observeEvent(out$d, {
-      out$counter <- out$counter+1
-    }, ignoreNULL = TRUE)
     
     return(out)
   

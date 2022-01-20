@@ -315,7 +315,7 @@ ic_app <- function() {
           hide(id = "ic_par_focus_sample")
         }
       }
-      #browser()
+      #
       validate(need(out, message = "No valid data"))
       return(out)
     })
@@ -407,27 +407,33 @@ ic_app <- function() {
       out <- ldply(1:length(ic_mi_peaks()), function(i) {
         x <- ic_mi_peaks()[[i]]
         sm <- mass(ic_mi_spectra()[[i]])
-        #si <- intensity(ic_mi_spectra()[[i]])
-        #pm <- mass(ic_mi_peaks()[[i]])
         rnd_time <- 2
-        ldply(1:length(x@mass), function(j) {
-          # pb <- find_peak_boundaries(
-          #   int = si, 
-          #   p = which.min(abs(sm - pm[j])),
-          #   k = 3, min_scans = 5
-          # )
-          pb <- unlist(x@metaData$pb[j,])
+        if (length(x@mass)==0) {
           data.frame(
-            "Sample"=i, 
-            "Peak ID"=j, 
-            "RT max"=round(x@mass[j], rnd_time), 
-            "RT start"=round(sm[pb[1]], rnd_time), 
-            "RT end"=round(sm[pb[2]], rnd_time),
-            "Scan start"=pb[1], 
-            "Scan end"=pb[2],
-            "Scan length"=diff(pb),
-            check.names = FALSE, stringsAsFactors = FALSE)
-        })
+            "Sample"=0L, 
+            "Peak ID"=0L, 
+            "RT max"=0L, 
+            "RT start"=0L, 
+            "RT end"=0L,
+            "Scan start"=0L, 
+            "Scan end"=0L,
+            "Scan length"=0L,
+            check.names = FALSE, stringsAsFactors = FALSE)[-1,]
+        } else {
+          ldply(1:length(x@mass), function(j) {
+            pb <- unlist(x@metaData$pb[j,])
+            data.frame(
+              "Sample"=i, 
+              "Peak ID"=j, 
+              "RT max"=round(x@mass[j], rnd_time), 
+              "RT start"=round(sm[pb[1]], rnd_time), 
+              "RT end"=round(sm[pb[2]], rnd_time),
+              "Scan start"=pb[1], 
+              "Scan end"=pb[2],
+              "Scan length"=diff(pb),
+              check.names = FALSE, stringsAsFactors = FALSE)
+          })
+        }
       })
       out <- out[order(out[,"Peak ID"]),]
       # enable ic_par_align_rt only if consistent number of peaks are found in all samples and more than 2 samples are available
@@ -498,7 +504,7 @@ ic_app <- function() {
         html = TRUE,
         text = tagList(
           div(
-            style = "margin-bottom: 200px",
+            style = "margin-bottom: 160px",
             selectInput(inputId = session$ns("ic_btn_rem_zone_value"), label = "Select zone value to remove", choices = 100*zones())
           )
         ),
@@ -613,7 +619,7 @@ ic_app <- function() {
       #n_rows = 9, 
       n_cols = reactive({1})
     )
-    observeEvent(rv_clipboard$d, {
+    observeEvent(rv_clipboard$counter, {
       x <- ic_table_peaks_edit()
       if (nrow(rv_clipboard$d)==nrow(x)) {
         x[,"f_value"] <- rv_clipboard$d
@@ -621,7 +627,7 @@ ic_app <- function() {
       } else {
         message("wrong number of rows for peak table to paste f_value")
       }
-    })
+    }, ignoreInit = TRUE)
     
     # change plot range upon user mouse interaction (click and drag)
     observeEvent(input$ic_specplot_brush, {
@@ -680,7 +686,7 @@ ic_app <- function() {
     # check and update time range filters when time column is changed
     observeEvent(input$ic_par_rt_col, {
       req(file_in())
-      # browser()
+      # 
       # # reset cut range and...
       # rng <- sapply(file_in(), function(x) { range(x[,input$ic_par_rt_col], na.rm=TRUE) })
       # cut_range$min <- min(rng[1,])
@@ -712,6 +718,7 @@ ic_app <- function() {
     # set cut range to displayed spectrum range when user triggers this action button
     observeEvent(input$ic_par_cut_range, {
       req(cut_range$min, input$ic_par_rt_col, spec_plots_xmin(), spec_plots_xmax())
+      
       if (status_range_cut()=="off") {
         cut_range$min <- spec_plots_xmin()
         cut_range$max <- spec_plots_xmax()
@@ -802,11 +809,29 @@ ic_app <- function() {
       ic_table_peaks_edit(tmp)
     })
     
-    shiny::observeEvent(ic_table_peaks_edit(), {
+    update_k <- function() {
       message("update k in peak table")
-      tmp <- ic_table_peaks_edit()
-      tmp[,"k"] <- round(sapply(tmp[,"f_value"], function(x) { mass_bias(mi_amu = input$ic_par_mi_amu , si_amu = input$ic_par_si_amu, method = input$ic_par_mb_method, f_value = x) }), 4)
+      isolate({
+        tmp <- ic_table_peaks_edit()
+        if (nrow(tmp)>=1) { 
+          tmp[,"k"] <- round(sapply(tmp[,"f_value"], function(x) { 
+            mass_bias(mi_amu = input$ic_par_mi_amu , si_amu = input$ic_par_si_amu, method = input$ic_par_mb_method, f_value = x) 
+          }), 4)
+        }
+      })
       ic_table_peaks_edit(tmp)
+    }
+    
+    shiny::observeEvent(ic_table_peaks_edit(), {
+      update_k()
+    })
+    shiny::observeEvent(input$ic_par_mi_amu, {
+      req(ic_table_peaks_edit())
+      update_k()
+    })
+    shiny::observeEvent(input$ic_par_si_amu, {
+      req(ic_table_peaks_edit())
+      update_k()
     })
     
     # ratio(s) table
@@ -826,7 +851,7 @@ ic_app <- function() {
       #message("redraw spec plot")
       xrng <- c(spec_plots_xmin(), spec_plots_xmax())
       yrng <- c(0, max(sapply(c(ic_mi_spectra(), ic_si_spectra()), function(x) {max(x@intensity)})))
-      #if (min(yrng)<0) {browser()}
+      #if (min(yrng)<0) {}
       par(mar = c(4.5, 4.5, 0.5, ifelse("overlay_drift" %in% input$ic_par_specplot, 4.5, 0.5)))
       plot(x = xrng, y = yrng, type = "n", xaxs = "i", xlab=paste0("Time [", input$ic_par_mi_rt_unit, "]"), ylab="Intensity [V]")
       if ("overlay_mi" %in% input$ic_par_specplot) {
@@ -852,23 +877,32 @@ ic_app <- function() {
         }
         if (!is.null(ic_mi_peaks()) && length(ic_mi_peaks()[[idx]]@mass)>=1) {
           pks <- ic_table_peaks_edit()
-          pks_sam <- pks[pks[,"Sample"]==idx,,drop=FALSE]
+          if (idx==idx_all[1]) {
+            peak_details <- lapply(idx_all, function (idx) {
+              tmp <- pks[pks[,"Sample"]==idx,,drop=FALSE]
+              lapply(tmp[,"Peak ID"], function(j) {
+                pb <- c(tmp[j,"Scan start"], tmp[j,"Scan end"])
+                out <- data.frame("RT"=mass(ic_mi_spectra()[[idx]])[pb[1]:pb[2]], "Iso1" = intensity(ic_mi_spectra()[[idx]])[pb[1]:pb[2]], "Iso2" = intensity(ic_si_spectra()[[idx]])[pb[1]:pb[2]])
+                out[,"Ratio"] <- out[,3]/out[,2]
+                if ("correct_drift" %in% input$ic_par_specplot) {
+                  out[,"Ratio"] <- out[,"Ratio"]*tmp[j,"k"]
+                }
+                out[!is.finite(out[,"Ratio"]),"Ratio"] <- NA
+                return(out)
+              })
+            })
+            rng_R <- range(sapply(peak_details, function(y) { 
+              sapply(y, function(x) { quantile(x[,"Ratio"], c(input$ic_par_quant_low,input$ic_par_quant_high), na.rm=TRUE)  })
+            }))
+            #browser()
+            message(paste(round(rng_R,4), collapse=" | "))            
+          }
+          
           # plot symbols at peak apex
           #points(x=mass(ic_mi_peaks()[[idx]]), y=intensity(ic_mi_peaks()[[idx]]), col = 1, pch = 21, bg = cols[idx])
           if ("overlay_drift" %in% input$ic_par_specplot) {
-            dfs <- lapply(pks_sam[,"Peak ID"], function(j) {
-              pb <- c(pks_sam[j,"Scan start"], pks_sam[j,"Scan end"])
-              out <- data.frame("RT"=sm[pb[1]:pb[2]], "Iso1" = si[pb[1]:pb[2]], "Iso2" = intensity(ic_si_spectra()[[idx]])[pb[1]:pb[2]])
-              out[,"Ratio"] <- out[,3]/out[,2]
-              if ("correct_drift" %in% input$ic_par_specplot) {
-                out[,"Ratio"] <- out[,"Ratio"]*pks_sam[j,"k"]
-              }
-              out[!is.finite(out[,"Ratio"]),"Ratio"] <- NA
-              return(out)
-            })
             max_I <- max(yrng)
-            rng_R <- range(sapply(dfs, function(x) { quantile(x[,"Ratio"], c(input$ic_par_quant_low,input$ic_par_quant_high), na.rm=TRUE) }))
-            dfs <- lapply(dfs, function(x) {
+            dfs <- lapply(peak_details[[ifelse(length(idx_all)==1, 1, idx)]], function(x) {
               flt <- is.finite(x[,"Ratio"])
               y <- x[flt,"Ratio"]-rng_R[1]
               x[flt,"Ratio_norm"] <- y*(max_I/diff(rng_R))
@@ -888,6 +922,7 @@ ic_app <- function() {
             }
           }
           if ("overlay_pb" %in% input$ic_par_specplot) {
+            pks_sam <- pks[pks[,"Sample"]==idx,]
             for (j in 1:nrow(pks_sam)) { 
               pb <- c(pks_sam[j,"Scan start"], pks_sam[j,"Scan end"])
               abline(v=sm[pb], col=cols[idx])
