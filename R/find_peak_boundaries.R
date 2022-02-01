@@ -17,8 +17,9 @@
 #'abline(v=IsoCor:::find_peak_boundaries(x))
 #' 
 #'@keywords internal
-find_peak_boundaries <- function(int=NULL, p=which.max(int), k=3, min_scans=3) {
+find_peak_boundaries <- function(int=NULL, p=which.max(int), k=3, min_scans=3, noise=0) {
   int[!is.finite(int)] <- 0
+  #int[int<=noise] <- 0
   idx <- 1:length(int)
   n <- length(idx)
   test_front <- diff(int[1:p])<=0

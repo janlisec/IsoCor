@@ -48,6 +48,7 @@ ic_app <- function() {
     fluidPage(
       sidebarLayout(
         sidebarPanel(
+          width = 3,
           fluidRow(
             column(
               width = 4, 
@@ -60,108 +61,74 @@ ic_app <- function() {
             ),
             column(width = 8, helpText(status_line, align="right"))
           ),
-          tabsetPanel(
-            tabPanel(
-              title = "Data", p(""),
-              fluidRow(
-                column(width = 4, selectInput(inputId = "ic_par_libsource", label = "Data source", choices = list("testdata", "upload files"), selected = "testdata")),
-                column(width = 4, selectInput(inputId = "ic_par_inputformat", label = "File format", choices = list("exp", "icp", "data", "generic"), selected = "exp")),
-                #column(width = 4, fileInput(inputId = "ic_par_path_expfiles", label = "Select Files", multiple = TRUE))
-                column(width = 4, uiOutput(outputId = "ic_par_path_expfiles"))
-              ),
-              fluidRow(
-                uiOutput(outputId = "ic_par_inputformat_explained")
-              )
+          fluidRow(
+            h3("Data"),
+            fluidRow(
+              column(width = 4, selectInput(inputId = "ic_par_libsource", label = "Data source", choices = list("testdata", "upload files"), selected = "testdata")),
+              column(width = 4, selectInput(inputId = "ic_par_inputformat", label = shiny::actionLink(inputId = "ic_hlp_fileformat", label = "File format"), choices = list("exp", "icp", "data", "generic"), selected = "exp")),
+              column(width = 4, uiOutput(outputId = "ic_par_path_expfiles"))
             ),
-            tabPanel(
-              title = "Options",
-              fluidRow(
-                column(width = 6,
-                  h3("Import"),
-                  fluidRow(
-                    column(width = 6, selectInput(inputId = "ic_par_rt_col", label = "RT column", choices = c("")) %>% bs_embed_tooltip(title = "Select RT column.")),
-                    column(width = 6, textInput(inputId = "ic_par_mi_rt_unit", label = "RT unit", value = "min"))
-                  ),
-                  fluidRow(
-                    column(width = 4, selectInput(inputId = "ic_par_mi_col", label = "MI column", choices = c("")) %>% bs_embed_tooltip(title = "Select Master Isotope column.")),
-                    column(width = 4, textInput(inputId = "ic_par_mi_col_name", label = "MI Name")),
-                    column(width = 4, numericInput(inputId = "ic_par_mi_amu", label = "MI amu", value = 0))
-                  ),
-                  fluidRow(
-                    column(width = 4, selectInput(inputId = "ic_par_si_col", label = "SI column", choices = c("")) %>% bs_embed_tooltip(title = "Select Secondary Isotope column.")),
-                    column(width = 4, textInput(inputId = "ic_par_si_col_name", label = "SI Name")),
-                    column(width = 4, numericInput(inputId = "ic_par_si_amu", label = "SI amu", value = 0))
-                  ),
-                  h3("Processing"),
-                  numericInput(inputId = "ic_par_halfWindowSize", label = "Smoothing", value = 25, min=0, max=50, step=1) %>% bs_embed_tooltip(title = "Smoothing parameter: 'half window size' of peak. Set to '0' to omit this processing step."),
-                  selectInput(inputId = "ic_par_baseline_method", label = "Baseline Correction", choices = c("none", "SNIP", "TopHat", "ConvexHull", "median"), selected = "SNIP") %>% bs_embed_tooltip(title = "Select method for baseline estimation or 'none' to omit this processing step."),
-                  numericInput(inputId = "ic_par_peakpicking_SNR", label = "Peak Picking (SNR)", value = 25, min=1, max=100, step=1) %>% bs_embed_tooltip(title = "Peak picking parameter: 'Signal/Noise ratio' [range: 1..100]."),
-                  fluidRow(
-                    column(6, actionButton(inputId = "ic_par_cut_range", label = "cut range", width='100%') %>% bs_embed_tooltip(title = "Cut samples to currently visible range.")),
-                    column(6, actionButton(inputId = "ic_par_align_rt", label = "align rt", width='100%') %>% bs_embed_tooltip(title = "Align samples at peak maxima."))
-                  )
-                ),
-                column(
-                  width = 6, 
-                  h3("Display"),
-                  selectInput(inputId = "ic_par_focus_sample", label = "Focus sample", choices = list("Sample 1"=1)),
-                  checkboxGroupInput(
-                    inputId = "ic_par_specplot", 
-                    label = "Plot options", 
-                    choices =  list("show all samples" = "overlay_mi",
-                                    "show peak boundaries"="overlay_pb",
-                                    "show sample IDs" = "overlay_legend",
-                                    "overlay SI trace" = "overlay_si",
-                                    "overlay ratio drift" = "overlay_drift",
-                                    "correct ratio for mass bias" = "correct_drift"), 
-                    selected = c("overlay_pb","overlay_mi","overlay_drift")
-                  ),
-                  h3("Output"),
-                  fluidRow(
-                    column(
-                      width = 6, 
-                      div(style = "margin-bottom: 5px", fluidRow(column(12, strong("Zone values")))),
-                      fluidRow(
-                        column(6, actionButton(inputId = "ic_btn_add_zone", label = "add")),
-                        column(6, actionButton(inputId = "ic_btn_rem_zone", label = "rem"))
-                      )
-                    ),
-                    column(6, numericInput(inputId = "ic_par_coef", label = "coef", value = 0.9997, min=0.9, max=1.1, step=0.0001) %>% bs_embed_tooltip(title = "Define coef parameter for delta calculation."))
-                  ),    
-                  fluidRow(
-                    column(6, selectInput(inputId = "ic_par_mb_method", label = "Mass bias method", choices = c("Linear","Russel","Exponential")) %>% bs_embed_tooltip(title = "Select mass bias method.")),
-                    column(6, div(style="padding-top: 25px", read_clipboard_UI(id = "test")))
-                  ),
-                  # fluidRow(
-                  #   column(12, read_clipboard_UI(id = "test"))
-                  #   #div(style="padding-top: 25px", read_clipboard_UI(id = "test")) %>% bs_embed_tooltip(title = "Click to load f-values by copy/paste.")
-                  #   #column(4, div(style="padding-top: 25px", actionButton(inputId = "ic_par_mb_btn", label = "Load f-vals")) %>% bs_embed_tooltip(title = "Click to load f-values by copy/paste.")),
-                  # ),
-                  fluidRow(column(12, 
-                    div(style = "margin-bottom: 5px", fluidRow(column(12, strong("Drift filter (lower, upper)")))),
-                    fluidRow(
-                      column(6, numericInput(inputId = "ic_par_quant_low", label = NULL, value = 0.1, min=0, max=0.25, step=0.01) %>% bs_embed_tooltip(title = "Define lower quantile parameter to limit depicted drift value distribution.")),
-                      column(6, numericInput(inputId = "ic_par_quant_high", label = NULL, value = 0.9, min=0.75, max=1, step=0.01) %>% bs_embed_tooltip(title = "Define upper quantile parameter to limit depicted drift value distribution."))
-                    )
-                  )),
-                  h3("Peak table"),
-                  uiOutput("ic_peaks_type_div")
-                )
-              )
+            h3("Import"),
+            fluidRow(
+              column(width = 6, selectInput(inputId = "ic_par_rt_col", label = "RT column", choices = c("")) %>% bs_embed_tooltip(title = "Select RT column.")),
+              column(width = 6, textInput(inputId = "ic_par_mi_rt_unit", label = "RT unit", value = "min"))
             ),
-            id = "ic_par_panel",
-            selected = "Options",
-            type = "tabs"
+            fluidRow(
+              column(width = 4, selectInput(inputId = "ic_par_mi_col", label = "MI column", choices = c("")) %>% bs_embed_tooltip(title = "Select Master Isotope column.")),
+              column(width = 4, textInput(inputId = "ic_par_mi_col_name", label = "MI Name")),
+              column(width = 4, numericInput(inputId = "ic_par_mi_amu", label = "MI amu", value = 0, step = 0.0001))
+            ),
+            fluidRow(
+              column(width = 4, selectInput(inputId = "ic_par_si_col", label = "SI column", choices = c("")) %>% bs_embed_tooltip(title = "Select Secondary Isotope column.")),
+              column(width = 4, textInput(inputId = "ic_par_si_col_name", label = "SI Name")),
+              column(width = 4, numericInput(inputId = "ic_par_si_amu", label = "SI amu", value = 0, step = 0.0001))
+            ),
+            h3("Processing"),
+            fluidRow(
+              column(width = 4, numericInput(inputId = "ic_par_halfWindowSize", label = "Smoothing", value = 25, min=0, max=50, step=1) %>% bs_embed_tooltip(title = "Smoothing parameter: 'half window size' of peak. Set to '0' to omit this processing step.")),
+              column(width = 4, selectInput(inputId = "ic_par_baseline_method", label = "Baseline Correction", choices = c("none", "SNIP", "TopHat", "ConvexHull", "median"), selected = "none") %>% bs_embed_tooltip(title = "Select method for baseline estimation or 'none' to omit this processing step.")),
+              column(width = 4, numericInput(inputId = "ic_par_peakpicking_SNR", label = "Peak Picking (SNR)", value = 25, min=1, max=100, step=1) %>% bs_embed_tooltip(title = "Peak picking parameter: 'Signal/Noise ratio' [range: 1..100].")),
+            )
           )
         ),
     
         mainPanel(
-          plotOutput(
-            outputId = "ic_specplot", 
-            height = "400px", 
-            dblclick = dblclickOpts(id = "ic_specplot_dblclick"), 
-            brush = brushOpts(id = "ic_specplot_brush", direction = "x", resetOnNew = TRUE)
-          ) %>% bs_embed_tooltip(title = "You may select a time range [Click and Drag] with the cursor to zoom. Use [Double Click] to unzoom.", placement = "left"),
+          width = 9,
+          fluidRow(
+            column(
+              width = 10,
+              plotOutput(
+                outputId = "ic_specplot", 
+                height = "400px", 
+                dblclick = dblclickOpts(id = "ic_specplot_dblclick"), 
+                brush = brushOpts(id = "ic_specplot_brush", direction = "x", resetOnNew = TRUE)
+              ) %>% bs_embed_tooltip(title = "You may select a time range [Click and Drag] with the cursor to zoom. Use [Double Click] to unzoom.", placement = "left")
+            ),
+            column(
+              width = 2,
+              shiny::wellPanel(
+                selectInput(inputId = "ic_par_focus_sample", label = "Focus sample", choices = list("Sample 1"=1)),
+                checkboxGroupInput(
+                  inputId = "ic_par_specplot", 
+                  label = "Plot options", 
+                  choices =  list("show all samples" = "overlay_mi",
+                                  "show peak boundaries"="overlay_pb",
+                                  "show sample IDs" = "overlay_legend",
+                                  "overlay SI trace" = "overlay_si",
+                                  "overlay ratio points" = "overlay_drift",
+                                  "correct ratio points" = "correct_drift"), 
+                  selected = c("overlay_pb","overlay_mi","overlay_drift")
+                ),
+                fluidRow(
+                  actionButton(inputId = "ic_par_cut_range", label = "cut range", width='45%') %>% bs_embed_tooltip(title = "Cut samples to currently visible range."),
+                  actionButton(inputId = "ic_par_align_rt", label = "align rt", width='45%') %>% bs_embed_tooltip(title = "Align samples at peak maxima.")
+                ),
+                fluidRow(
+                  actionButton(inputId = "ic_par_set_drift", label = "filter points", width='45%') %>% bs_embed_tooltip(title = "Set upper and lower quantile to filter depicted ratio points.")
+                )
+              )
+            )
+          ),
           tabsetPanel(
             tabPanel(
               title = "Peak table", p(""),
@@ -180,10 +147,10 @@ ic_app <- function() {
                 column(width = 4, plotOutput(outputId = "ic_deltaplot2", height = "400px"))
               )
             ),
-            tabPanel(
-              title = "Drift plot", p(""),
-              plotOutput(outputId = "ic_driftplot", height = "400px")
-            ),
+            # tabPanel(
+            #   title = "Drift plot", p(""),
+            #   plotOutput(outputId = "ic_driftplot", height = "400px")
+            # ),
             id="ic_tabPanel_tables"
           )
         )
@@ -207,7 +174,7 @@ ic_app <- function() {
     
     output$ic_par_path_expfiles <- renderUI({
       # file input as renderUI to allow a reset in case that the upload method is changed
-      message(input$ic_par_inputformat)
+      #message(input$ic_par_inputformat)
       fileInput(inputId = "ic_par_path_expfiles", label = "Select Files", multiple = TRUE)
     })
       
@@ -272,11 +239,13 @@ ic_app <- function() {
         halfWindowSize = hWS,
         SNR = isolate(input$ic_par_peakpicking_SNR)
       )
+      #noise <- min(MALDIquant::estimateNoise(x)[,2], na.rm=TRUE)
       out@metaData[["pb"]] <- ldply(out@mass, function(p) { 
+        #browser()
         find_peak_boundaries(
           int = intensity(x), 
           p = which.min(abs(mass(x) - p)),
-          k = 3, min_scans = 5
+          k = 3, min_scans = 5#, noise = noise
         )
       })
       return(out)
@@ -314,15 +283,16 @@ ic_app <- function() {
           disable(selector = "#ic_par_specplot input[value='overlay_mi']")
           hide(id = "ic_par_focus_sample")
         }
+      } else {
+        ic_table_peaks_edit(NULL)
       }
-      #
       validate(need(out, message = "No valid data"))
       return(out)
     })
     
     observeEvent(input$ic_par_specplot, {
       toggle(id = "ic_par_focus_sample", condition = !("overlay_mi" %in% input$ic_par_specplot))
-    })
+    }, ignoreNULL = FALSE)
     
     # check table headers for consistency and to get colnames to allow user column selection
     file_in_cols <- reactive({
@@ -430,7 +400,7 @@ ic_app <- function() {
               "RT end"=round(sm[pb[2]], rnd_time),
               "Scan start"=pb[1], 
               "Scan end"=pb[2],
-              "Scan length"=diff(pb),
+              "Scan length"=diff(pb)+1,
               check.names = FALSE, stringsAsFactors = FALSE)
           })
         }
@@ -445,7 +415,7 @@ ic_app <- function() {
         out <- cbind(
           out, 
           data.frame(
-            "Mass bias method"=rep(input$ic_par_mb_method, nrow(out)),
+            "Mass bias method"=rep(isolate(current_mb_method()), nrow(out)),
             "f_value"=rep(0, nrow(out)),
             "k"=rep(1, nrow(out)),
             check.names = FALSE
@@ -456,29 +426,29 @@ ic_app <- function() {
     })
     
     # total number of valid peaks based on ic_table_peaks_pre()
-    ic_n_valid_peaks <- reactive({
-      req(ic_table_peaks_pre())
-      df <- ic_table_peaks_pre()
-      np <- length(unique(df[,"Peak ID"]))
-      validate(need(length(unique(table(df[,"Peak ID"])))==1, message = "Please select processing parameters to obtain a similar number of peaks in all files"))
-      validate(need(np>=2, message = "Please select processing parameters to obtain at least 2 peaks in all files (1 sample and 1 standard peak)"))
-      return(np)
-    })
+    # ic_n_valid_peaks <- reactive({
+    #   req(ic_table_peaks_pre())
+    #   df <- ic_table_peaks_pre()
+    #   np <- length(unique(df[,"Peak ID"]))
+    #   validate(need(length(unique(table(df[,"Peak ID"])))==1, message = "Please select processing parameters to obtain a similar number of peaks in all files"))
+    #   validate(need(np>=2, message = "Please select processing parameters to obtain at least 2 peaks in all files (1 sample and 1 standard peak)"))
+    #   return(np)
+    # })
     
     # mi peak-type table contains selectInput's for peak type and can be modified --> this modification is evaluated here
-    ic_table_peaks_type_mod <- reactive({
-      req(ic_n_valid_peaks())
-      message("ic_table_peaks_type_mod")
-      np <- ic_n_valid_peaks()
-      out <- data.frame("Peak ID"=1:np, "Type"=as.character(NA), check.names = FALSE)
-      for (i in 1:np) {
-        out[i,"Type"] <- input[[paste0("ic_pt", i)]]
-      }
-      validate(need(all(c("sample","standard") %in% out[,"Type"]), message = "At least 1 peak must be defined as 'standard' and 1 as 'sample'"))
-      return(out)
-    })
+    # ic_table_peaks_type_mod <- reactive({
+    #   req(ic_n_valid_peaks())
+    #   message("ic_table_peaks_type_mod")
+    #   np <- ic_n_valid_peaks()
+    #   out <- data.frame("Peak ID"=1:np, "Type"=as.character(NA), check.names = FALSE)
+    #   for (i in 1:np) {
+    #     out[i,"Type"] <- input[[paste0("ic_pt", i)]]
+    #   }
+    #   validate(need(all(c("sample","standard") %in% out[,"Type"]), message = "At least 1 peak must be defined as 'standard' and 1 as 'sample'"))
+    #   return(out)
+    # })
     
-    zones <- reactiveVal(c(1,0.95,0.8,0.5,0))
+    zones <- reactiveVal(c(1,0.95,0.9,0.8))
     observeEvent(input$ic_btn_add_zone, {
       shinyalert(
         html = TRUE,
@@ -500,12 +470,14 @@ ic_app <- function() {
       )
     })
     observeEvent(input$ic_btn_rem_zone, {
+      selected <- NULL
+      if (!is.null(input$ic_table_ratios_rows_selected)) selected <- ic_table_ratios_pre()[input$ic_table_ratios_rows_selected,"Zone [%]"]
       shinyalert(
         html = TRUE,
         text = tagList(
           div(
             style = "margin-bottom: 160px",
-            selectInput(inputId = session$ns("ic_btn_rem_zone_value"), label = "Select zone value to remove", choices = 100*zones())
+            selectInput(inputId = session$ns("ic_btn_rem_zone_value"), label = "Select zone value to remove", choices = 100*zones(), selected = selected)
           )
         ),
         cancelButtonText = "Cancel", confirmButtonText = "Rem", showCancelButton = TRUE, size = "xs",
@@ -521,10 +493,28 @@ ic_app <- function() {
       )
     })
     
+    current_coef <- reactiveVal(1)
+    observeEvent(input$ic_btn_set_coef, {
+      shinyalert(
+        html = TRUE,
+        text = tagList(
+          numericInput(inputId = "ic_par_coef", label = "Add 'coef' to normalize delta", value = current_coef(), min=0.9, max=1.1, step=0.0001) %>% bs_embed_tooltip(title = "Define coef parameter for delta calculation.")
+        ),
+        cancelButtonText = "Cancel", confirmButtonText = "Set", showCancelButton = TRUE, size = "xs",
+        callbackR = function(value) {
+          if (value) {
+            current_coef(input$ic_par_coef)
+          }
+        }
+      )
+    })
+    
     # mi/si ratio calculation
     ic_table_ratios_pre <- reactive({
-      req(ic_table_peaks_edit(), ic_si_spectra(), ic_mi_spectra(), ic_table_peaks_type_mod(), zones())
+      req(ic_table_peaks_edit(), ic_si_spectra(), ic_mi_spectra(), zones())
       pks <- ic_table_peaks_edit()
+      validate(need("Type" %in% colnames(pks), message = "Please specify processing parameters to obtain a similar number of peaks per sample."))
+      validate(need(all(c("sample","standard") %in% pks[,"Type"]), message = "Please specify at least one peak as 'sample' and one peak as 'standard' in peak table."))
       # For every sample...
       out <- ldply(1:length(ic_mi_peaks()), function(i) {
         x <- ic_mi_peaks()[[i]]
@@ -538,9 +528,10 @@ ic_app <- function() {
           return(data.frame("Iso1" = siM[pb[1]:pb[2]], "Iso2" = siS[pb[1]:pb[2]]))
         })
         ks <- as.numeric(pks[pks[,"Sample"]==i,"k"])
-        ptps <- ic_table_peaks_type_mod()[,"Type"]
+        ptps <- sapply(split(pks[,"Type"], pks[,"Peak ID"]), unique)
         isos <- paste(input$ic_par_si_col_name, input$ic_par_mi_col_name, sep="/")
         bl_method <- input$ic_par_baseline_method
+        #browser()
         # For every ratio method...
         ldply(c("PBP","PAI","LRS"), function(ratio_method) {
           # For every Zone value...
@@ -551,10 +542,12 @@ ic_app <- function() {
               "BL method"=bl_method,
               "Ratio method"=ratio_method, 
               "Zone [%]"=round(100*zone), 
+              "Points"=NA,
               check.names = FALSE, stringsAsFactors = FALSE
             )
             for (j in 1:length(dfs)) {
               out[,paste0("Ratio P", j, " (", ptps[j], ")")] <- ks[j] * iso_ratio(data = dfs[[j]], method = ratio_method, thr = zone)
+              #out[j,"Points"] <- sum(dfs[[j]][,1] >= (1-zone)*max(dfs[[j]][,1], na.rm=TRUE))
             }
             return(out)
           })
@@ -566,7 +559,7 @@ ic_app <- function() {
       for (j in 1:length(sam_col)) {
         #fac <- 1000*(input$ic_par_coef - 1)
         #out[,gsub("Ratio", "Delta", colnames(out)[sam_col[j]])] <- (out[,sam_col[j]]/apply(out[,std_col,drop=FALSE], 1, mean))*fac
-        out[,gsub("Ratio", "Delta", colnames(out)[sam_col[j]])] <- 1000*((out[,sam_col[j]]/apply(out[,std_col,drop=FALSE], 1, mean))*input$ic_par_coef-1)
+        out[,gsub("Ratio", "Delta", colnames(out)[sam_col[j]])] <- 1000*((out[,sam_col[j]]/apply(out[,std_col,drop=FALSE], 1, mean))*current_coef()-1)
       }
       # remove discarded peaks here
       if (length(dis_col)>=1) {
@@ -577,14 +570,14 @@ ic_app <- function() {
       # remove calculations where Delta did not yield a finite value
       out <- out[!(out[,"Zone [%]"]==0 & out[,"Ratio method"]=="PAI"),]
       # round values
-      p_cols <- grep(" P", colnames(out))
-      for (cols in p_cols) { out[,cols] <- round(out[,cols], 4) }
+      for (cols in grep("Ratio P", colnames(out))) { out[,cols] <- round(out[,cols], 6) }
+      for (cols in grep("Delta P", colnames(out))) { out[,cols] <- round(out[,cols], 3) }
       return(out)
     })
     
     # delta calculation in case of at least 3 input files
     ic_table_deltas_pre <- reactive({
-      req(ic_table_ratios_pre(), ic_table_peaks_type_mod())
+      req(ic_table_ratios_pre())
       validate(need(length(ic_si_spectra())>=3, message = "This view is only available if you uploaded at least 3 replicate measurements."))
       df <- ic_table_ratios_pre()
       p_cols <- grep("Delta", colnames(df))
@@ -593,13 +586,13 @@ ic_app <- function() {
         ldply(split(df, interaction(df[,"Ratio method"], df[,"Zone [%]"], drop=TRUE)), function(x) {
           tmp <- x[1, c("Ratio method","Zone [%]"), drop=FALSE]
           tmp[,"Mean Delta"] <- mean(x[,j])
-          tmp[,"RSD Delta"] <- sd(x[,j])
+          tmp[,"SD Delta"] <- sd(x[,j])
           tmp[,"Peak"] <- gsub("[^[:digit:]]", "", colnames(x)[j])
           return(tmp)
         }, .id = NULL)
       }, .id = NULL)
-      out[,"Mean Delta"] <- round(out[,"Mean Delta"], 4)
-      out[,"RSD Delta"] <- round(out[,"RSD Delta"], 4)
+      out[,"Mean Delta"] <- round(out[,"Mean Delta"], 3)
+      out[,"SD Delta"] <- round(out[,"SD Delta"], 3)
       out <- out[order(out[,"Peak"], out[,"Ratio method"], out[,"Zone [%]"]),]
       return(out)
     })
@@ -608,26 +601,17 @@ ic_app <- function() {
     # table of peaks of 'new sample'
     shiny::observeEvent(ic_table_peaks_pre(), {
       tmp <- ic_table_peaks_pre()
+      if (all(table(tmp[,"Peak ID"])==max(tmp[,"Sample"]))) {
+        np <- max(tmp[,"Peak ID"])
+        if (length(np)==1 && np>=2) {
+          type <- c("standard", rep("sample", np-2), "standard")
+          if (length(type)==2) type[2] <- "sample"
+          tmp$Type <- sapply(tmp[,"Peak ID"], function(i) {type[i]})
+        }
+        
+      }
       ic_table_peaks_edit(tmp)
     })
-    
-    rv_clipboard <- read_clipboard_Server(
-      id = "test", 
-      btn_txt = reactive({paste("copy", nrow(ic_table_peaks_edit()), "f-values")}), 
-      #btn_txt = paste("copy", 9, "<br>f-values"), 
-      n_rows = reactive({nrow(ic_table_peaks_edit())}),
-      #n_rows = 9, 
-      n_cols = reactive({1})
-    )
-    observeEvent(rv_clipboard$counter, {
-      x <- ic_table_peaks_edit()
-      if (nrow(rv_clipboard$d)==nrow(x)) {
-        x[,"f_value"] <- rv_clipboard$d
-        ic_table_peaks_edit(x)
-      } else {
-        message("wrong number of rows for peak table to paste f_value")
-      }
-    }, ignoreInit = TRUE)
     
     # change plot range upon user mouse interaction (click and drag)
     observeEvent(input$ic_specplot_brush, {
@@ -753,52 +737,197 @@ ic_app <- function() {
       }
     })
     
+    current_drift_filter <- reactiveVal(c(0.1,0.9))
+    observeEvent(input$ic_par_set_drift, {
+      shinyalert(
+        html = TRUE,
+        text = tagList(
+          fluidRow(
+            div(style = "margin-bottom: 5px", fluidRow(column(12, strong("Points filter (lower/upper quantile)")))),
+            fluidRow(
+              column(width = 6, align = "center", numericInput(inputId = "ic_par_quant_low", label = NULL, value = current_drift_filter()[1], min=0, max=0.25, step=0.01, width="90%") %>% bs_embed_tooltip(title = "Define lower quantile parameter to limit depicted drift value distribution.")),
+              column(width = 6, align = "center", numericInput(inputId = "ic_par_quant_high", label = NULL, value = current_drift_filter()[2], min=0.75, max=1, step=0.01, width="90%") %>% bs_embed_tooltip(title = "Define upper quantile parameter to limit depicted drift value distribution."))
+            )
+          )
+        ),
+        cancelButtonText = "Cancel", confirmButtonText = "Set", showCancelButton = TRUE, size = "xs",
+        callbackR = function(value) {
+          if (value) {
+            current_drift_filter(c(input$ic_par_quant_low,input$ic_par_quant_high))
+          }
+        }
+      )
+      
+    })
     
     ### outputs ##################################################################
     ## UI output
     # peak-type table with user select inputs
-    output$ic_peaks_type_div <- renderUI({
-      ic_n_valid_peaks()
-      # specify initial peak-type vector
-      type <- c("standard", rep("sample", ic_n_valid_peaks()-2), "standard")
-      if (length(type)==2) type[2] <- "sample"
-      # mini_div function
-      mini_div <- function(i) {
-        fluidRow(div(
-          id = paste0("div_ic_pt", i),
-          style = "display: block; padding-left: 10px; line-height: 20px; margin-bottom: 2px",
-          class="ptcell", 
-          div(style = "float: left; margin-bottom: 0px; width: 20px; margin-right:5px; text-align: right; padding-top: 7px;", i), 
-          div(style = "float: left; margin-bottom: 0px; width: 120px;", 
-            selectInput(
-              inputId = paste0("ic_pt",i), 
-              label = NULL, 
-              choices = c("sample","standard","discard"),
-              width = "100%",
-              selected = type[i]
-            )
-          )
-        ))
-      }
-      # return tagList and formatting options
-      tagList(
-        div(style="float: left; margin-bottom: 0px; width: 20px; margin-right:5px; font-weight: 700; font-size: 14px; text-align: right", "ID"),
-        div(style="float: left; margin-bottom: 0px; width: 120px; font-weight: 700; font-size: 14px; text-align: left", "Peak-Type"),
-        shiny::br(),
-        #fluidRow(column(2, strong("ID")), column(10, strong("Type"))),
-        lapply(1:ic_n_valid_peaks(), mini_div),
-        # tags$head(tags$style(HTML(".ptcell .h5 { text-align: center; }"))),
-        tags$head(tags$style(HTML(".ptcell .selectize-control { margin-bottom: 0px }"))),
-        tags$head(tags$style(HTML(".ptcell .control-label { margin-bottom: 0px }"))),
-        tags$head(tags$style(HTML(".ptcell .form-group { margin-bottom: 0px }")))
-      )
-    })
+    # output$ic_peaks_type_div <- renderUI({
+    #   ic_n_valid_peaks()
+    #   # specify initial peak-type vector
+    #   type <- c("standard", rep("sample", ic_n_valid_peaks()-2), "standard")
+    #   if (length(type)==2) type[2] <- "sample"
+    #   # mini_div function
+    #   mini_div <- function(i) {
+    #     fluidRow(div(
+    #       id = paste0("div_ic_pt", i),
+    #       style = "display: block; padding-left: 10px; line-height: 20px; margin-bottom: 2px",
+    #       class="ptcell", 
+    #       div(style = "float: left; margin-bottom: 0px; width: 20px; margin-right:5px; text-align: right; padding-top: 7px;", i), 
+    #       div(style = "float: left; margin-bottom: 0px; width: 120px;", 
+    #         selectInput(
+    #           inputId = paste0("ic_pt",i), 
+    #           label = NULL, 
+    #           choices = c("sample","standard","discard"),
+    #           width = "100%",
+    #           selected = type[i]
+    #         )
+    #       )
+    #     ))
+    #   }
+    #   # return tagList and formatting options
+    #   tagList(
+    #     div(style="float: left; margin-bottom: 0px; width: 20px; margin-right:5px; font-weight: 700; font-size: 14px; text-align: right", "ID"),
+    #     div(style="float: left; margin-bottom: 0px; width: 120px; font-weight: 700; font-size: 14px; text-align: left", "Peak-Type"),
+    #     shiny::br(),
+    #     #fluidRow(column(2, strong("ID")), column(10, strong("Type"))),
+    #     lapply(1:ic_n_valid_peaks(), mini_div),
+    #     # tags$head(tags$style(HTML(".ptcell .h5 { text-align: center; }"))),
+    #     tags$head(tags$style(HTML(".ptcell .selectize-control { margin-bottom: 0px }"))),
+    #     tags$head(tags$style(HTML(".ptcell .control-label { margin-bottom: 0px }"))),
+    #     tags$head(tags$style(HTML(".ptcell .form-group { margin-bottom: 0px }")))
+    #   )
+    # })
     
     ## tables 
     output$ic_table_peaks <- renderDT({
       #ic_table_peaks_pre()
-      ic_table_peaks_edit()
-    }, server = FALSE, extensions = "Buttons", options = list("dom"="Bfti", "pageLength"=100, buttons = c('copy', 'csv', 'excel', 'pdf')), selection=list(mode="single", target="row"), editable = list(target = "column", disable = list(columns = c(0:8,10)), numeric = 9), rownames=NULL)
+      DT::datatable(
+        data = ic_table_peaks_edit(),
+        "extensions" = "Buttons", 
+        "options" = list(
+          "server" = FALSE, 
+          "dom" = "Bfti", 
+          "autoWidth" = TRUE,
+          "paging" = FALSE,
+          "scrollY" = "410px",
+          "pageLength" = -1, 
+          "buttons" = list(
+            'copy', 'excel',
+            list(
+              extend = "collection",
+              text = 'define mass bias correction',
+              action = DT::JS(
+                "function ( e, dt, node, config ) {
+                Shiny.setInputValue('ic_btn_mass_bias', 1, {priority: 'event'});
+                }")
+            ),
+            list(
+              extend = "collection",
+              text = 'change peak type',
+              action = DT::JS(
+                "function ( e, dt, node, config ) {
+                Shiny.setInputValue('ic_btn_peak_type', 1, {priority: 'event'});
+                }")
+            )
+          )
+        ), 
+        "selection" = list(mode="single", target="row"), 
+        "editable" = list(target = "column", disable = list(columns = c(0:8,10)), numeric = 9), 
+        "rownames" = NULL
+      )
+    })
+    
+    current_mb_method <- reactiveVal("none")
+    shiny::observeEvent(input$ic_btn_mass_bias, {
+      shinyalert(
+        html = TRUE,
+        text = tagList(
+          fluidRow(
+            column(width = 6, selectInput(inputId = "ic_par_mb_method", label = "Mass bias method", choices = c("none","Linear","Russel","Exponential"), selected = current_mb_method()) %>% bs_embed_tooltip(title = "Select mass bias method.")),
+            column(
+              width = 6, 
+              shiny::textAreaInput(
+                inputId = "txt_textAreaInput",
+                label = "Copy/Paste or Enter",
+                placeholder = paste("You can copy/paste a numeric Excel range of exactly 1 columns and", nrow(ic_table_peaks_edit()), "rows to fill column 'f_value' automatically. Alternatively you can enter values manually."),
+                width="100%",
+                rows=12
+              )
+            )
+          )
+        ),
+        cancelButtonText = "Cancel", confirmButtonText = "Set", showCancelButton = TRUE, size = "s",
+        callbackR = function(value) {
+          if (value) {
+            #browser()
+            tab <- ic_table_peaks_edit()
+            # read pasted textArea
+            tmp <- strsplit(input$txt_textAreaInput, "\n")[[1]]
+            # correct potential error for last col being empty
+            tmp <- gsub("\t$", "\t\t", tmp)
+            # split at "\t" and ensure equal length
+            # convert to numeric (what is expected by downstream functions)
+            tmp <- plyr::laply(tmp, function(x) {
+              x <- try(as.numeric(x))
+            }, .drop = FALSE)
+            if(prod(dim(tmp))==nrow(tab) && all(is.finite(tmp))) {
+              tab[, "f_value"] <- as.vector(unlist(tmp))
+            }
+            tab[,"Mass bias method"] <- rep(input$ic_par_mb_method, nrow(tab))
+            current_mb_method(input$ic_par_mb_method)
+            ic_table_peaks_edit(tab)
+          }
+        }
+      )
+    })
+    
+    observeEvent(input$ic_table_peaks_rows_selected, {
+      req(ic_table_peaks_edit())
+      i <- input$ic_table_peaks_rows_selected
+      # browser()
+      # if (is.null(i) | !("Type" %in% colnames(ic_table_peaks_edit()))) {
+      #   shinyjs::disable(id = "ic_btn_peak_type")
+      # } else {
+      #   if ("Type" %in% colnames(ic_table_peaks_edit())) {
+      #     shinyjs::enable(id = "ic_btn_peak_type")
+      #     updateActionButton(inputId = "ic_btn_peak_type", label = paste("set type for peak", i))
+      #   }
+      # }
+    }, ignoreNULL = FALSE)
+    
+    shiny::observeEvent(input$ic_btn_peak_type, {
+      if (is.null(input$ic_table_peaks_rows_selected)) {
+        shinyalert(text = "Please select a table row first", type = "info")
+      } else {
+        if (!("Type" %in% colnames(ic_table_peaks_edit()))) {
+          shinyalert(text = "Peak types can only be assigned once a similar number of peaks are found in all sampels", type = "info")
+        } else {
+          i <- input$ic_table_peaks_rows_selected
+          shinyalert(
+            html = TRUE,
+            text = tagList(
+              shiny::selectInput(
+                inputId = "pid_select_Input",
+                label = paste0("Select Peak type for #", ic_table_peaks_edit()[i,"Peak ID"]),
+                choices = c("standard", "sample", "discard"),
+                selected = ic_table_peaks_edit()[i,"Type"]
+              )
+            ),
+            cancelButtonText = "Cancel", confirmButtonText = "Set", showCancelButton = TRUE, size = "xs",
+            callbackR = function(value) {
+              if (value) {
+                tab <- ic_table_peaks_edit()
+                l <- which(tab[,"Peak ID"]==tab[input$ic_table_peaks_rows_selected,"Peak ID"])
+                tab[l,"Type"] <- input$pid_select_Input
+                ic_table_peaks_edit(tab)
+              }
+            }
+          )
+        }
+      }
+    })
     
     shiny::observeEvent(input$ic_table_peaks_cell_edit, {
       # convert column values to numeric
@@ -810,13 +939,17 @@ ic_app <- function() {
     })
     
     update_k <- function() {
-      message("update k in peak table")
+      #message("update k in peak table")
       isolate({
         tmp <- ic_table_peaks_edit()
         if (nrow(tmp)>=1) { 
-          tmp[,"k"] <- round(sapply(tmp[,"f_value"], function(x) { 
-            mass_bias(mi_amu = input$ic_par_mi_amu , si_amu = input$ic_par_si_amu, method = input$ic_par_mb_method, f_value = x) 
-          }), 4)
+          if (current_mb_method()=="none") {
+            tmp[,"k"] <- rep(1, nrow(tmp))
+          } else {
+            tmp[,"k"] <- round(sapply(tmp[,"f_value"], function(x) { 
+              mass_bias(mi_amu = input$ic_par_mi_amu , si_amu = input$ic_par_si_amu, method = current_mb_method(), f_value = x) 
+            }), 6)
+          }
         }
       })
       ic_table_peaks_edit(tmp)
@@ -836,22 +969,62 @@ ic_app <- function() {
     
     # ratio(s) table
     output$ic_table_ratios <- renderDT({
-      ic_table_ratios_pre()
-    }, server = FALSE, extensions = "Buttons", options = list("dom"="Bfti", "pageLength"=100, buttons = c('copy', 'csv', 'excel', 'pdf')), selection=list(mode="single", target="row"), rownames=NULL)
+      DT::datatable(
+        data = ic_table_ratios_pre(),
+        extensions = "Buttons", 
+        options = list(
+          "server" = FALSE, 
+          "dom"="Bfti", 
+          "autoWidth" = TRUE,
+          "paging" = FALSE,
+          "scrollY" = "410px",
+          "pageLength" = -1, 
+          "buttons" = list(
+            'copy',
+            'excel',
+            list(
+              extend = "collection",
+              text = 'add new zone',
+              action = DT::JS(
+                "function ( e, dt, node, config ) {
+                Shiny.setInputValue('ic_btn_add_zone', 1, {priority: 'event'});
+                }")
+            ),
+            list(
+              extend = "collection",
+              text = 'rem selected zone',
+              action = DT::JS(
+                "function ( e, dt, node, config ) {
+                Shiny.setInputValue('ic_btn_rem_zone', 1, {priority: 'event'});
+                }")
+            ),
+            list(
+              extend = "collection",
+              text = 'set coef',
+              action = DT::JS(
+                "function ( e, dt, node, config ) {
+                Shiny.setInputValue('ic_btn_set_coef', 1, {priority: 'event'});
+                }")
+            )
+          )
+        ), 
+        "selection" = list(mode="single", target="row"), 
+        "rownames" = NULL
+      )
+    })
     
     # delta(s) table
     output$ic_table_deltas <- renderDT({
       ic_table_deltas_pre()
-    }, server = FALSE, extensions = "Buttons", options = list("dom"="Bfti", "pageLength"=100, buttons = c('copy', 'csv', 'excel', 'pdf')), selection=list(mode="single", target="row"), rownames=NULL)  
+    }, server = FALSE, extensions = "Buttons", options = list("dom"="Bfti", "pageLength"=100, buttons = c('copy', 'excel')), selection=list(mode="single", target="row"), rownames=NULL)  
     
     ## plots
     # ...
     output$ic_specplot <- renderPlot({
-      req(file_in(), ic_mi_spectra(), ic_si_spectra(), input$ic_par_si_col_name, input$ic_par_mi_col_name)
+      req(file_in(), ic_mi_spectra(), ic_si_spectra(), input$ic_par_si_col_name, input$ic_par_mi_col_name, ic_table_peaks_edit())
       #message("redraw spec plot")
       xrng <- c(spec_plots_xmin(), spec_plots_xmax())
-      yrng <- c(0, max(sapply(c(ic_mi_spectra(), ic_si_spectra()), function(x) {max(x@intensity)})))
-      #if (min(yrng)<0) {}
+      yrng <- c(0, max(sapply(c(ic_mi_spectra(), ic_si_spectra()), function(x) {max(x@intensity, na.rm=TRUE)})))
       par(mar = c(4.5, 4.5, 0.5, ifelse("overlay_drift" %in% input$ic_par_specplot, 4.5, 0.5)))
       plot(x = xrng, y = yrng, type = "n", xaxs = "i", xlab=paste0("Time [", input$ic_par_mi_rt_unit, "]"), ylab="Intensity [V]")
       if ("overlay_mi" %in% input$ic_par_specplot) {
@@ -892,10 +1065,17 @@ ic_app <- function() {
               })
             })
             rng_R <- range(sapply(peak_details, function(y) { 
-              sapply(y, function(x) { quantile(x[,"Ratio"], c(input$ic_par_quant_low,input$ic_par_quant_high), na.rm=TRUE)  })
+              sapply(y, function(x) { quantile(x[,"Ratio"], current_drift_filter(), na.rm=TRUE)  })
             }))
             #browser()
-            message(paste(round(rng_R,4), collapse=" | "))            
+            #message(paste(round(rng_R,4), collapse=" | "))            
+          }
+          # highlight peak selected in table
+          sel_pk <- input$ic_table_peaks_rows_selected
+          if (!is.null(sel_pk) && pks[sel_pk,"Sample"]==idx) {
+            #browser()
+            sel_pk_data <- peak_details[[ifelse(length(idx_all)==1, 1, idx)]][[pks[sel_pk,"Peak ID"]]]
+            lines(x = sel_pk_data[,"RT"], y = sel_pk_data[,"Iso1"], col=cols[pks[sel_pk,"Sample"]], lwd=3)
           }
           
           # plot symbols at peak apex
@@ -934,24 +1114,24 @@ ic_app <- function() {
     })
     
     # ...
-    output$ic_deltaplot <- renderPlot({
-      req(ic_table_deltas_pre())
-      df <- ic_table_deltas_pre()
-      df <- df[is.finite(df[,"Mean Delta"]),]
-      df[,"Ratio method"] <- factor(df[,"Ratio method"], levels=c("PBP","PAI","LRS"))
-      cols <- c(5:7)[as.numeric(df[,"Ratio method"])]
-      pchs <- c(21,22,24)[as.numeric(df[,"Ratio method"])]
-      x <- df[,"Zone [%]"]
-      x <- x + c(-0.25,0,0.25)[as.numeric(df[,"Ratio method"])]
-      y <- df[,"Mean Delta"]
-      e <- df[,"RSD Delta"]
-      par(mar = c(4.5, 4.5, 0.5, 0.5))
-      plot(x=range(x), y=range(rep(y,2)+rep(c(-1,1),each=length(y))*2*e), type="n", xlab="Zone [%] (values are slightly shifted to improve visibility)", ylab="Mean Delta")
-      legend(x = "top", horiz=TRUE, pch=c(21,22,24), pt.bg=c(5:7), legend=levels(df[,"Ratio method"]))
-      segments(x0 = x, y0 = y-2*e, y1 = y+2*e, col = cols)
-      segments(x0 = x, y0 = y-2*e, y1 = y+2*e, col = cols)
-      points(x = x, y = y, pch = pchs, bg = cols, cex=2)
-    })
+    # output$ic_deltaplot <- renderPlot({
+    #   req(ic_table_deltas_pre())
+    #   df <- ic_table_deltas_pre()
+    #   df <- df[is.finite(df[,"Mean Delta"]),]
+    #   df[,"Ratio method"] <- factor(df[,"Ratio method"], levels=c("PBP","PAI","LRS"))
+    #   cols <- c(5:7)[as.numeric(df[,"Ratio method"])]
+    #   pchs <- c(21,22,24)[as.numeric(df[,"Ratio method"])]
+    #   x <- df[,"Zone [%]"]
+    #   x <- x + c(-0.25,0,0.25)[as.numeric(df[,"Ratio method"])]
+    #   y <- df[,"Mean Delta"]
+    #   e <- df[,"SD Delta"]
+    #   par(mar = c(4.5, 4.5, 0.5, 0.5))
+    #   plot(x=range(x), y=range(rep(y,2)+rep(c(-1,1),each=length(y))*2*e), type="n", xlab="Zone [%] (values are slightly shifted to improve visibility)", ylab="Mean Delta")
+    #   legend(x = "top", horiz=TRUE, pch=c(21,22,24), pt.bg=c(5:7), legend=levels(df[,"Ratio method"]))
+    #   segments(x0 = x, y0 = y-2*e, y1 = y+2*e, col = cols)
+    #   segments(x0 = x, y0 = y-2*e, y1 = y+2*e, col = cols)
+    #   points(x = x, y = y, pch = pchs, bg = cols, cex=2)
+    # })
     
     # ...
     output$ic_deltaplot2 <- renderPlot({
@@ -965,7 +1145,7 @@ ic_app <- function() {
       x_ann <- levels(x)
       x <- as.numeric(x) + c(-0.05,0,0.05)[as.numeric(df[,"Ratio method"])]
       y <- df[,"Mean Delta"]
-      e <- df[,"RSD Delta"]
+      e <- df[,"SD Delta"]
       par(mar = c(4.5, 4.5, 1.5, 0.5))
       plot(x=range(x)+c(-1,1)*0.1*diff(range(x)), y=range(rep(y,2)+rep(c(-1,1),each=length(y))*2*e), type="n", xlab="Zone [%] (values are slightly shifted to improve visibility)", ylab="Mean Delta", axes=F)
       axis(2); axis(1, at=1:length(x_ann), labels = x_ann); box()
@@ -976,49 +1156,70 @@ ic_app <- function() {
     })
     
     # ...
-    output$ic_driftplot <- renderPlot({
-      req(ic_table_peaks_pre(), ic_si_spectra(), ic_mi_spectra(), ic_table_peaks_type_mod())
-      pks <- ic_table_peaks_pre()
-      i <- as.numeric(gsub("[^[:digit:]]", "", input$ic_par_focus_sample))
-      x <- ic_mi_peaks()[[i]]
-      smM <- mass(ic_mi_spectra()[[i]])
-      siM <- intensity(ic_mi_spectra()[[i]])
-      smS <- mass(ic_si_spectra()[[i]])
-      siS <- intensity(ic_si_spectra()[[i]])
-      pks_sam <- pks[pks[,"Sample"]==i,,drop=FALSE]
-      dfs <- lapply(pks_sam[,"Peak ID"], function(j) {
-        pb <- c(pks_sam[j,"Scan start"], pks_sam[j,"Scan end"])
-        out <- data.frame(
-          "RT"=smM[pb[1]:pb[2]], 
-          "Iso1" = siM[pb[1]:pb[2]], 
-          "Iso2" = siS[pb[1]:pb[2]],
-          "Ratio" = siS[pb[1]:pb[2]]/siM[pb[1]:pb[2]]
+    # output$ic_driftplot <- renderPlot({
+    #   req(ic_table_peaks_pre(), ic_si_spectra(), ic_mi_spectra())
+    #   pks <- ic_table_peaks_pre()
+    #   i <- as.numeric(gsub("[^[:digit:]]", "", input$ic_par_focus_sample))
+    #   x <- ic_mi_peaks()[[i]]
+    #   smM <- mass(ic_mi_spectra()[[i]])
+    #   siM <- intensity(ic_mi_spectra()[[i]])
+    #   smS <- mass(ic_si_spectra()[[i]])
+    #   siS <- intensity(ic_si_spectra()[[i]])
+    #   pks_sam <- pks[pks[,"Sample"]==i,,drop=FALSE]
+    #   dfs <- lapply(pks_sam[,"Peak ID"], function(j) {
+    #     pb <- c(pks_sam[j,"Scan start"], pks_sam[j,"Scan end"])
+    #     out <- data.frame(
+    #       "RT"=smM[pb[1]:pb[2]], 
+    #       "Iso1" = siM[pb[1]:pb[2]], 
+    #       "Iso2" = siS[pb[1]:pb[2]],
+    #       "Ratio" = siS[pb[1]:pb[2]]/siM[pb[1]:pb[2]]
+    #     )
+    #     out[!is.finite(out[,"Ratio"]),"Ratio"] <- NA
+    #     return(out)
+    #   })
+    #   yrng <- range(sapply(dfs, function(x) {
+    #     range(x[,2], na.rm=TRUE)
+    #   }))
+    #   yrng2 <- range(sapply(dfs, function(x) {
+    #     quantile(x[,4], current_drift_filter(), na.rm=TRUE)
+    #   }))
+    #   ptps <- sapply(split(ic_table_peaks_edit()[,"Type"], ic_table_peaks_edit()[,"Peak ID"]), unique)
+    #   isos <- paste(input$ic_par_si_col_name, input$ic_par_mi_col_name, sep="/")
+    #   bl_method <- input$ic_par_baseline_method
+    #   par(mfrow=c(1,length(ptps)))  
+    #   for (j in 1:length(ptps)) {
+    #     plot(x=dfs[[j]][,1], y=dfs[[j]][,2], ylim=yrng, type="l", xlab="", ylab="", main=paste0("Sample ", i, ", Peak ", j, " (", ptps[j], ")"), cex.axis=1.5, cex.main=1.5)
+    #     y2 <- dfs[[j]][,"Ratio"]
+    #     y2_norm <- yrng[2]*(y2-yrng2[1])/(yrng2[2]-yrng2[1])
+    #     points(x=dfs[[j]][,1], y=y2_norm, col=grey(0.9))
+    #     #abline(h=mean(y2_norm, na.rm=T)+c(-1,0,1)*sd(y2_norm, na.rm=T), col=c(2,3,2))
+    #     at <- axTicks(side = 4)
+    #     #axis(side = 4, at=at, labels = round(100*y2[sapply(at, function(x) { which.min(abs(y2_norm-x)) })], 2), cex.axis=1.5)
+    #     axis(side = 4, at=at, labels = round(100*seq(yrng2[1], yrng2[2], length.out=length(at)), 2), cex.axis=1.5)
+    #     
+    #   }
+    # })
+    
+    shiny::observeEvent(input$ic_hlp_fileformat, {
+      help_text <- switch(
+        input$ic_par_inputformat,
+        "exp" = "tab-delimited<br>header row<br>column 'Time' exists<br>time unit in milli seconds<br>n comment rows at end",
+        "icp" = "tab-delimited<br>first column contains time in seconds<br>6 comment rows at top<br>first row contains ion names",
+        "data" = "csv<br>third column contains time in seconds<br>first 2 columns get removed",
+        "generic" = "tab-delimited<br>header row expected<br>at least 3 columns expected",
+        "undefined"
+      )
+      shiny::showModal(
+        shiny::modalDialog(
+          HTML(help_text),
+          footer = shiny::tagList(shiny::modalButton("Ok")),
+          size = "s",
+          easyClose = TRUE,
+          title = paste("Help on", input$ic_par_inputformat, "format")
         )
-        out[!is.finite(out[,"Ratio"]),"Ratio"] <- NA
-        return(out)
-      })
-      yrng <- range(sapply(dfs, function(x) {
-        range(x[,2], na.rm=TRUE)
-      }))
-      yrng2 <- range(sapply(dfs, function(x) {
-        quantile(x[,4], c(input$ic_par_quant_low, input$ic_par_quant_high), na.rm=TRUE)
-      }))
-      ptps <- ic_table_peaks_type_mod()[,"Type"]
-      isos <- paste(input$ic_par_si_col_name, input$ic_par_mi_col_name, sep="/")
-      bl_method <- input$ic_par_baseline_method
-      par(mfrow=c(1,length(ptps)))  
-      for (j in 1:length(ptps)) {
-        plot(x=dfs[[j]][,1], y=dfs[[j]][,2], ylim=yrng, type="l", xlab="", ylab="", main=paste0("Sample ", i, ", Peak ", j, " (", ptps[j], ")"), cex.axis=1.5, cex.main=1.5)
-        y2 <- dfs[[j]][,"Ratio"]
-        y2_norm <- yrng[2]*(y2-yrng2[1])/(yrng2[2]-yrng2[1])
-        points(x=dfs[[j]][,1], y=y2_norm, col=grey(0.9))
-        #abline(h=mean(y2_norm, na.rm=T)+c(-1,0,1)*sd(y2_norm, na.rm=T), col=c(2,3,2))
-        at <- axTicks(side = 4)
-        #axis(side = 4, at=at, labels = round(100*y2[sapply(at, function(x) { which.min(abs(y2_norm-x)) })], 2), cex.axis=1.5)
-        axis(side = 4, at=at, labels = round(100*seq(yrng2[1], yrng2[2], length.out=length(at)), 2), cex.axis=1.5)
-        
-      }
+      )
     })
+    
   
   }
   

@@ -20,5 +20,6 @@ shiny::addResourcePath(prefix = 'pics', directoryPath = 'inst/www')
 # load testdata in an extra environment
 tde <- new.env()
 utils::data(testdata, envir = tde)
+utils::data(isotopes, envir = tde)
 # set up an indicator object to tell the App that this is the shinyapp.io version
 app_destination <- "shiny.io"
