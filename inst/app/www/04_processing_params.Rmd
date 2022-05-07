@@ -1,0 +1,12 @@
+### Processing parameters
+
+Processing includes three parameters to select: **Smoothing**, **Baseline correction** and **Peak picking (SNR)**. 
+These parameters are used to optimize peak detection and baseline correction steps. 
+The user can find optimal parameters by selecting different options and monitoring results in the output tables and by visual comparison on the plot.
+
+- **Smoothing** (the Savitzky-Golay method) parameter smooths out the small intensity fluctuations within the peak to help algorithm find peak boundaries correctly.
+***Note!*** Smoothing is only used during baseline correction and peak detection steps. For isotope ratio calculation non-smoothed intensities are used.
+- **Baseline estimation** methods are implemented using <a href="https://academic.oup.com/bioinformatics/article/28/17/2270/246552/" target="_blank" rel="noopener noreferrer">MALDIquant package</a>.
+- **Peak picking** SNR (signal-to-noise) parameter helps to ignore small peaks of no interest.
+
+***Note!*** All output tables and plots are automatically updated when parameters are modified.

@@ -24,7 +24,7 @@ read_raw_data <- function(path, format = c("exp","icp","data","generic")) {
     if (format=="exp") {
       comment_lines <- grep("^[*]", readLines(path))
       if (length(comment_lines)>=1) {
-        df <- read.delim(path, sep="\t", header = T, check.names = FALSE, nrows = min(comment_lines)-1)
+        df <- read.delim(path, sep="\t", header = T, check.names = FALSE, nrows = min(comment_lines)-2)
       } else {
         df <- read.delim(path, sep="\t", header = T, check.names = FALSE)
       }

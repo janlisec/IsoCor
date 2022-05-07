@@ -21,7 +21,7 @@
 #'@importFrom MALDIquant transformIntensity smoothIntensity removeBaseline detectPeaks createMassSpectrum mass intensity
 #'@importFrom plyr ldply
 #'@importFrom shiny addResourcePath fluidPage sidebarLayout sidebarPanel fluidRow column selectInput fileInput tabsetPanel tabPanel plotOutput uiOutput mainPanel helpText numericInput actionButton checkboxInput radioButtons dblclickOpts brushOpts reactiveVal isolate reactive req need observeEvent updateSelectizeInput updateNumericInput renderPrint renderPlot renderUI shinyApp updateSelectInput validate reactiveValues updateCheckboxGroupInput updateActionButton updateTextInput checkboxGroupInput tagList textInput 
-#'@importFrom shinyalert useShinyalert shinyalert
+#'@importFrom shinyalert shinyalert
 #'@importFrom shinyjs useShinyjs hide show enable disable toggle
 #'@importFrom stats median rnorm sd quantile
 #'@importFrom utils data packageDate packageVersion
@@ -29,23 +29,31 @@
 #'@export
 ic_app <- function() {
 
-  # some parameters which are set in global.R for online app but here for package version  
-  if (!exists("app_destination")) {
-    # these values are specified as required in package context
-    # the analogous parameters for the app are set in global.R
-    status_line <- paste0("ver ", packageVersion("IsoCor"), " (", packageDate("IsoCor"), ") jan.lisec@bam.de")
-    shiny::addResourcePath(prefix = 'pics', directoryPath = paste(system.file(package = "IsoCor"), "www", sep="/"))
-    tde <- new.env()
-    utils::data("testdata", package = "IsoCor", envir = tde)
-    utils::data("isotopes", package = "IsoCor", envir = tde)
-  }
+  golem::add_resource_path(
+    'www', app_sys('app/www')
+  )
+  shiny::tags$head(
+    golem::bundle_resources(
+      path = app_sys('app/www'),
+      app_title = get_golem_config("app_name")
+    ),
+    golem::favicon(ico = "BAMLogo"),
+    # Add here other external resources
+    shinyjs::useShinyjs()
+  )
   
+  status_line <- paste0("ver ", get_golem_config("app_version"), " (", get_golem_config("app_date"), ") jan.lisec@bam.de")
+  tde <- new.env()
+  utils::data("testdata", package = "IsoCor", envir = tde)
+  utils::data("isotopes", package = "IsoCor", envir = tde)
+
   # Define UI for application that draws a histogram
-  ui <- tagList(
-    useShinyjs(),
-    useShinyalert(),
-    use_bs_tooltip(),
+  ui <- shiny::tagList(
+    shinyjs::useShinyjs(),
+    bsplus::use_bs_tooltip(),
+    shiny::tags$head(tags$link(rel = "icon", href = "www/favicon.ico")),
     fluidPage(
+      title = "IsoCor",
       sidebarLayout(
         sidebarPanel(
           width = 3,
@@ -54,7 +62,7 @@ ic_app <- function() {
               width = 4, 
               shiny::div(
                 class = "verticalhorizontal",
-                img(src = paste("pics", "bam_logo_20pt.gif", sep="/"), position = "absolute", margin = "auto", alt="BAM Logo"),
+                img(src = "www/bam_logo_20pt.gif", position = "absolute", margin = "auto", alt="BAM Logo"),
                 strong("BAM"), em("IsoCor"),
                 position="relative"
               )
@@ -62,13 +70,14 @@ ic_app <- function() {
             column(width = 8, helpText(status_line, align="right"))
           ),
           fluidRow(
-            h3("Data"),
+            shiny::strong("Please click", shiny::actionLink(inputId = "ic_help01", label = "here"),  "for help when you are a first time user"),
+            shiny::h4(shiny::actionLink(inputId = "ic_help02", label = "Data")),
             fluidRow(
               column(width = 4, selectInput(inputId = "ic_par_libsource", label = "Data source", choices = list("testdata", "upload files"), selected = "testdata")),
-              column(width = 4, selectInput(inputId = "ic_par_inputformat", label = shiny::actionLink(inputId = "ic_hlp_fileformat", label = "File format"), choices = list("exp", "icp", "data", "generic"), selected = "exp")),
+              column(width = 4, selectInput(inputId = "ic_par_inputformat", label = "File format", choices = list("exp", "icp", "data", "generic"), selected = "exp")),
               column(width = 4, uiOutput(outputId = "ic_par_path_expfiles"))
             ),
-            h3("Import"),
+            shiny::h4(shiny::actionLink(inputId = "ic_help03", label = "Import")),
             fluidRow(
               column(width = 6, selectInput(inputId = "ic_par_rt_col", label = "RT column", choices = c("")) %>% bs_embed_tooltip(title = "Select RT column.")),
               column(width = 6, textInput(inputId = "ic_par_mi_rt_unit", label = "RT unit", value = "min"))
@@ -83,7 +92,7 @@ ic_app <- function() {
               column(width = 4, textInput(inputId = "ic_par_si_col_name", label = "SI Name")),
               column(width = 4, numericInput(inputId = "ic_par_si_amu", label = "SI amu", value = 0, step = 0.0001))
             ),
-            h3("Processing"),
+            shiny::h4(shiny::actionLink(inputId = "ic_help04", label = "Processing")),
             fluidRow(
               column(width = 4, numericInput(inputId = "ic_par_halfWindowSize", label = "Smoothing", value = 25, min=0, max=50, step=1) %>% bs_embed_tooltip(title = "Smoothing parameter: 'half window size' of peak. Set to '0' to omit this processing step.")),
               column(width = 4, selectInput(inputId = "ic_par_baseline_method", label = "Baseline Correction", choices = c("none", "SNIP", "TopHat", "ConvexHull", "median"), selected = "none") %>% bs_embed_tooltip(title = "Select method for baseline estimation or 'none' to omit this processing step.")),
@@ -110,7 +119,8 @@ ic_app <- function() {
                 selectInput(inputId = "ic_par_focus_sample", label = "Focus sample", choices = list("Sample 1"=1)),
                 checkboxGroupInput(
                   inputId = "ic_par_specplot", 
-                  label = "Plot options", 
+                  label = shiny::actionLink(inputId = "ic_help05", label = "Plot options"),
+                  #label = "Plot options", 
                   choices =  list("show all samples" = "overlay_mi",
                                   "show peak boundaries"="overlay_pb",
                                   "show sample IDs" = "overlay_legend",
@@ -132,15 +142,18 @@ ic_app <- function() {
           tabsetPanel(
             tabPanel(
               title = "Peak table", p(""),
+              #shiny::actionLink(inputId = "ic_help06", label = "Help Peak table"),
               DTOutput("ic_table_peaks")
             ),
             tabPanel(
               title = "Ratio table", p(""),
+              #shiny::actionLink(inputId = "ic_help07", label = "Help Ratio table"),
               DTOutput("ic_table_ratios")# %>% bs_embed_tooltip(title = "Tooltip.")
             ),
             tabPanel(
               title = "Delta table", p(""),
               #DTOutput("ic_table_deltas"),
+              #shiny::actionLink(inputId = "ic_help08", label = "Help Delta table"),
               fluidRow(
                 #column(width = 8, plotOutput(outputId = "ic_deltaplot", height = "400px")),
                 column(width = 8, DTOutput("ic_table_deltas")),
@@ -158,7 +171,7 @@ ic_app <- function() {
     )
   )
   
-  # Define server logic required to draw a histogram
+  # Define server logic
   server <- function(input, output, session) {
   
     ### setup Options ############################################################
@@ -174,22 +187,22 @@ ic_app <- function() {
     
     output$ic_par_path_expfiles <- renderUI({
       # file input as renderUI to allow a reset in case that the upload method is changed
-      #message(input$ic_par_inputformat)
+      message("output$ic_par_path_expfiles")
       fileInput(inputId = "ic_par_path_expfiles", label = "Select Files", multiple = TRUE)
     })
       
-    output$ic_par_inputformat_explained <- renderUI({
-      # give details of file format in case that the upload method is changed
-      out <- switch(
-        input$ic_par_inputformat,
-        "exp" = paste(h5("exp-Format"), "tab-delimited, header row, column 'Time', time unit in milli seconds, n comment rows at end"),
-        "icp" = paste(h5("icp-Format"), "tab-delimited, first column contains time in seconds, 6 comment rows at top, first row contains ion names"),
-        "data" = paste(h5("data"), "csv, third column contains time in seconds, first 2 columns get removed"),
-        "generic" = paste(h5("generic"), "tab-delimited, header row expected, at least 3 columns expected"),
-        HTML("undefined")
-      )
-      div(style = "padding-left: 16px", HTML(out))
-    })
+    # output$ic_par_inputformat_explained <- renderUI({
+    #   # give details of file format in case that the upload method is changed
+    #   out <- switch(
+    #     input$ic_par_inputformat,
+    #     "exp" = paste(h5("exp-Format"), "tab-delimited, header row, column 'Time', time unit in milli seconds, n comment rows at end"),
+    #     "icp" = paste(h5("icp-Format"), "tab-delimited, first column contains time in seconds, 6 comment rows at top, first row contains ion names"),
+    #     "data" = paste(h5("data"), "csv, third column contains time in seconds, first 2 columns get removed"),
+    #     "generic" = paste(h5("generic"), "tab-delimited, header row expected, at least 3 columns expected"),
+    #     HTML("undefined")
+    #   )
+    #   div(style = "padding-left: 16px", HTML(out))
+    # })
     
     ### setup reactive Values ####################################################
     # setup plot range (min, max)
@@ -215,37 +228,42 @@ ic_app <- function() {
       #   )
       # }
       if (isolate(input$ic_par_baseline_method)!="none") {
-        x <- removeBaseline(
-          object = x, 
-          method = isolate(input$ic_par_baseline_method)
-        )
+        if (input$ic_par_baseline_method=="Dariyah") {
+        } else {
+          x <- removeBaseline(
+            object = x, 
+            method = isolate(input$ic_par_baseline_method)
+          )
+        }
       } 
       return(x)
     }
     
     # peak detection function
     MALDIquant_peaks <- function(x) {
-      if (isolate(input$ic_par_halfWindowSize)>0) {
+      hWS <- isolate(input$ic_par_halfWindowSize)
+      if (hWS>0 && hWS<floor(length(x)/2)) {
         x <- smoothIntensity(
           object = x, 
           method = "MovingAverage", 
           halfWindowSize = isolate(input$ic_par_halfWindowSize)
         )
       }
-      hWS <- isolate(ifelse(input$ic_par_halfWindowSize>0, input$ic_par_halfWindowSize, 25))
+      # set a minimum hWS to detect peaks
+      hWS <- ifelse(hWS>0, hWS, 25)
       out <- detectPeaks(
         object = x, 
         method = "MAD",
         halfWindowSize = hWS,
         SNR = isolate(input$ic_par_peakpicking_SNR)
       )
-      #noise <- min(MALDIquant::estimateNoise(x)[,2], na.rm=TRUE)
+      noise <- isolate(input$ic_par_peakpicking_SNR)*min(MALDIquant::estimateNoise(x)[,2], na.rm=TRUE)
+      #noise <- 0
       out@metaData[["pb"]] <- ldply(out@mass, function(p) { 
-        #browser()
         find_peak_boundaries(
           int = intensity(x), 
           p = which.min(abs(mass(x) - p)),
-          k = 3, min_scans = 5#, noise = noise
+          k = 3, min_scans = 5, noise = noise
         )
       })
       return(out)
@@ -255,6 +273,7 @@ ic_app <- function() {
     # get input data as list of tables
     file_in <- reactive({
       req(input$ic_par_libsource)
+      message("file_in")
       out <- NULL
       if (input$ic_par_libsource=="upload files") {
         if (!is.null(input$ic_par_path_expfiles)) {
@@ -297,6 +316,7 @@ ic_app <- function() {
     # check table headers for consistency and to get colnames to allow user column selection
     file_in_cols <- reactive({
       req(file_in())
+      message("file_in_cols")
       headers <- sapply(lapply(file_in(), colnames), paste, collapse="")
       validate(need(length(unique(headers))==1, message = "Files contain different headers"))
       return(colnames(file_in()[[1]]))
@@ -305,8 +325,10 @@ ic_app <- function() {
     # convert input tables into MALDIquant spectra format for selected MI trace and RT column
     ic_mi_spectra_raw <- reactive({
       req(file_in(), input$ic_par_rt_col, input$ic_par_mi_col, cut_range$min, rt_shift())
-      validate(need(all(sapply(file_in(), function(x) { all(diff(x[,input$ic_par_rt_col])>0) })), message = "You selected a time column with non continuous values"))
       validate(need(all(c(input$ic_par_rt_col, input$ic_par_mi_col) %in% file_in_cols()), message = "Selected columns inconsistent with currently uploaded data"))
+      validate(need(all(sapply(file_in(), function(x) { all(diff(x[,input$ic_par_rt_col])>0) })), message = "You selected a time column with non continuous values"))
+      validate(need(expr = input$ic_par_halfWindowSize<floor(min(sapply(file_in(),nrow))/2), message = "Smoothing parameter is larger than 0.5 * data length"))
+      message("ic_mi_spectra_raw")
       lapply(1:length(file_in()), function(k) {
         x <- file_in()[[k]]
         m <- x[, input$ic_par_rt_col]
@@ -329,6 +351,7 @@ ic_app <- function() {
       req(file_in(), input$ic_par_rt_col, input$ic_par_mi_col, cut_range$min)
       validate(need(all(sapply(file_in(), function(x) { all(diff(x[,input$ic_par_rt_col])>0) })), message = "You selected a time column with non continuous values"))
       validate(need(all(c(input$ic_par_rt_col, input$ic_par_si_col) %in% file_in_cols()), message = "Selected columns inconsistent with currently uploaded data"))
+      message("ic_si_spectra_raw")
       lapply(1:length(file_in()), function(k) {
         x <- file_in()[[k]]
         m <- x[, input$ic_par_rt_col]
@@ -349,24 +372,27 @@ ic_app <- function() {
     # provide spectra based on processed raw data
     ic_mi_spectra <- reactive({
       req(ic_mi_spectra_raw(), input$ic_par_halfWindowSize, input$ic_par_baseline_method, input$ic_par_peakpicking_SNR)
-      input$ic_par_halfWindowSize
+      message("ic_mi_spectra")
+      #input$ic_par_halfWindowSize
       input$ic_par_baseline_method
-      input$ic_par_peakpicking_SNR
+      #input$ic_par_peakpicking_SNR
       MALDIquant_pre_process(ic_mi_spectra_raw())
     })
   
     # provide spectra based on processed raw data
     ic_si_spectra <- reactive({
-      input$ic_par_halfWindowSize
-      input$ic_par_baseline_method
-      input$ic_par_peakpicking_SNR
       req(ic_si_spectra_raw())
+      message("ic_si_spectra")
+      #input$ic_par_halfWindowSize
+      input$ic_par_baseline_method
+      #input$ic_par_peakpicking_SNR
       MALDIquant_pre_process(ic_si_spectra_raw())
     })
     
     # identify peaks in processed mi spectra
     ic_mi_peaks <- reactive({
       req(ic_mi_spectra())
+      message("ic_mi_peaks")
       disable(id = "ic_par_align_rt")
       lapply(ic_mi_spectra(), MALDIquant_peaks)
     })
@@ -374,6 +400,7 @@ ic_app <- function() {
     # mi peak table
     ic_table_peaks_pre <- reactive({
       req(ic_mi_peaks())
+      message("ic_table_peaks_pre")
       out <- ldply(1:length(ic_mi_peaks()), function(i) {
         x <- ic_mi_peaks()[[i]]
         sm <- mass(ic_mi_spectra()[[i]])
@@ -449,6 +476,80 @@ ic_app <- function() {
     # })
     
     zones <- reactiveVal(c(1,0.95,0.9,0.8))
+    current_coef <- reactiveVal(1)
+    
+    # mi/si ratio calculation
+    ic_table_ratios_pre <- reactive({
+      req(ic_table_peaks_edit(), ic_si_spectra(), ic_mi_spectra(), zones())
+      pks <- ic_table_peaks_edit()
+      validate(need("Type" %in% colnames(pks), message = "Please specify processing parameters to obtain a similar number of peaks per sample."))
+      validate(need(all(c("sample","standard") %in% pks[,"Type"]), message = "Please specify at least one peak as 'sample' and one peak as 'standard' in peak table."))
+      message("ic_table_ratios_pre")
+      # For every sample...
+      out <- ldply(1:length(ic_mi_peaks()), function(i) {
+        x <- ic_mi_peaks()[[i]]
+        # if (input$ic_par_ratiofromraw) {
+        #   smM <- mass(ic_mi_spectra()[[i]])
+        #   siM <- intensity(ic_mi_spectra()[[i]])
+        #   smS <- mass(ic_si_spectra()[[i]])
+        #   siS <- intensity(ic_si_spectra()[[i]])
+        # } else {
+        smM <- mass(ic_mi_spectra()[[i]])
+        siM <- intensity(ic_mi_spectra()[[i]])
+        smS <- mass(ic_si_spectra()[[i]])
+        siS <- intensity(ic_si_spectra()[[i]])
+        # }
+        pks_sam <- pks[pks[,"Sample"]==i,,drop=FALSE]
+        dfs <- lapply(pks_sam[,"Peak ID"], function(j) {
+          pb <- c(pks_sam[j,"Scan start"], pks_sam[j,"Scan end"])
+          return(data.frame("Iso1" = siM[pb[1]:pb[2]], "Iso2" = siS[pb[1]:pb[2]]))
+        })
+        ks <- as.numeric(pks[pks[,"Sample"]==i,"k"])
+        ptps <- sapply(split(pks[,"Type"], pks[,"Peak ID"]), unique)
+        isos <- paste(input$ic_par_si_col_name, input$ic_par_mi_col_name, sep="/")
+        bl_method <- input$ic_par_baseline_method
+        # For every ratio method...
+        ldply(c("PBP","PAI","LRS"), function(ratio_method) {
+          # For every Zone value...
+          ldply(zones(), function(zone) {
+            out <- data.frame(
+              "Sample"=i, 
+              "Isotopes"=isos,
+              "BL method"=bl_method,
+              "Ratio method"=ratio_method, 
+              "Zone [%]"=round(100*zone), 
+              check.names = FALSE, stringsAsFactors = FALSE
+            )
+            for (j in 1:length(dfs)) {
+              out[,paste0("Ratio P", j, " (", ptps[j], ")")] <- ks[j] * iso_ratio(data = dfs[[j]], method = ratio_method, thr = zone)
+              out[,paste0("Points P", j, " (", ptps[j], ")")] <- sum(dfs[[j]][,1] >= (1-zone)*max(dfs[[j]][,1], na.rm=TRUE))
+            }
+            return(out)
+          })
+        })
+      })
+      sam_col <- grep("Ratio P[[:digit:]] [(]sample[)]", colnames(out))
+      std_col <- grep("Ratio P[[:digit:]] [(]standard[)]", colnames(out))
+      dis_col <- grep("discard", colnames(out))
+      for (j in 1:length(sam_col)) {
+        #fac <- 1000*(input$ic_par_coef - 1)
+        #out[,gsub("Ratio", "Delta", colnames(out)[sam_col[j]])] <- (out[,sam_col[j]]/apply(out[,std_col,drop=FALSE], 1, mean))*fac
+        out[,gsub("Ratio", "Delta", colnames(out)[sam_col[j]])] <- 1000*((out[,sam_col[j]]/apply(out[,std_col,drop=FALSE], 1, mean))*current_coef()-1)
+      }
+      # remove discarded peaks here
+      if (length(dis_col)>=1) {
+        out <- out[,-dis_col]
+      }
+      # remove calculations for method=LRS where zone=0%
+      out <- out[!(out[,"Zone [%]"]==0 & out[,"Ratio method"]=="LRS"),]
+      # remove calculations where Delta did not yield a finite value
+      out <- out[!(out[,"Zone [%]"]==0 & out[,"Ratio method"]=="PAI"),]
+      # round values
+      for (cols in grep("Ratio P", colnames(out))) { out[,cols] <- round(out[,cols], 6) }
+      for (cols in grep("Delta P", colnames(out))) { out[,cols] <- round(out[,cols], 3) }
+      return(out)
+    })
+    
     observeEvent(input$ic_btn_add_zone, {
       shinyalert(
         html = TRUE,
@@ -493,7 +594,6 @@ ic_app <- function() {
       )
     })
     
-    current_coef <- reactiveVal(1)
     observeEvent(input$ic_btn_set_coef, {
       shinyalert(
         html = TRUE,
@@ -509,81 +609,16 @@ ic_app <- function() {
       )
     })
     
-    # mi/si ratio calculation
-    ic_table_ratios_pre <- reactive({
-      req(ic_table_peaks_edit(), ic_si_spectra(), ic_mi_spectra(), zones())
-      pks <- ic_table_peaks_edit()
-      validate(need("Type" %in% colnames(pks), message = "Please specify processing parameters to obtain a similar number of peaks per sample."))
-      validate(need(all(c("sample","standard") %in% pks[,"Type"]), message = "Please specify at least one peak as 'sample' and one peak as 'standard' in peak table."))
-      # For every sample...
-      out <- ldply(1:length(ic_mi_peaks()), function(i) {
-        x <- ic_mi_peaks()[[i]]
-        smM <- mass(ic_mi_spectra()[[i]])
-        siM <- intensity(ic_mi_spectra()[[i]])
-        smS <- mass(ic_si_spectra()[[i]])
-        siS <- intensity(ic_si_spectra()[[i]])
-        pks_sam <- pks[pks[,"Sample"]==i,,drop=FALSE]
-        dfs <- lapply(pks_sam[,"Peak ID"], function(j) {
-          pb <- c(pks_sam[j,"Scan start"], pks_sam[j,"Scan end"])
-          return(data.frame("Iso1" = siM[pb[1]:pb[2]], "Iso2" = siS[pb[1]:pb[2]]))
-        })
-        ks <- as.numeric(pks[pks[,"Sample"]==i,"k"])
-        ptps <- sapply(split(pks[,"Type"], pks[,"Peak ID"]), unique)
-        isos <- paste(input$ic_par_si_col_name, input$ic_par_mi_col_name, sep="/")
-        bl_method <- input$ic_par_baseline_method
-        #browser()
-        # For every ratio method...
-        ldply(c("PBP","PAI","LRS"), function(ratio_method) {
-          # For every Zone value...
-          ldply(zones(), function(zone) {
-            out <- data.frame(
-              "Sample"=i, 
-              "Isotopes"=isos,
-              "BL method"=bl_method,
-              "Ratio method"=ratio_method, 
-              "Zone [%]"=round(100*zone), 
-              "Points"=NA,
-              check.names = FALSE, stringsAsFactors = FALSE
-            )
-            for (j in 1:length(dfs)) {
-              out[,paste0("Ratio P", j, " (", ptps[j], ")")] <- ks[j] * iso_ratio(data = dfs[[j]], method = ratio_method, thr = zone)
-              #out[j,"Points"] <- sum(dfs[[j]][,1] >= (1-zone)*max(dfs[[j]][,1], na.rm=TRUE))
-            }
-            return(out)
-          })
-        })
-      })
-      sam_col <- grep("sample", colnames(out))
-      std_col <- grep("standard", colnames(out))
-      dis_col <- grep("discard", colnames(out))
-      for (j in 1:length(sam_col)) {
-        #fac <- 1000*(input$ic_par_coef - 1)
-        #out[,gsub("Ratio", "Delta", colnames(out)[sam_col[j]])] <- (out[,sam_col[j]]/apply(out[,std_col,drop=FALSE], 1, mean))*fac
-        out[,gsub("Ratio", "Delta", colnames(out)[sam_col[j]])] <- 1000*((out[,sam_col[j]]/apply(out[,std_col,drop=FALSE], 1, mean))*current_coef()-1)
-      }
-      # remove discarded peaks here
-      if (length(dis_col)>=1) {
-        out <- out[,-dis_col]
-      }
-      # remove calculations for method=LRS where zone=0%
-      out <- out[!(out[,"Zone [%]"]==0 & out[,"Ratio method"]=="LRS"),]
-      # remove calculations where Delta did not yield a finite value
-      out <- out[!(out[,"Zone [%]"]==0 & out[,"Ratio method"]=="PAI"),]
-      # round values
-      for (cols in grep("Ratio P", colnames(out))) { out[,cols] <- round(out[,cols], 6) }
-      for (cols in grep("Delta P", colnames(out))) { out[,cols] <- round(out[,cols], 3) }
-      return(out)
-    })
-    
     # delta calculation in case of at least 3 input files
     ic_table_deltas_pre <- reactive({
       req(ic_table_ratios_pre())
       validate(need(length(ic_si_spectra())>=3, message = "This view is only available if you uploaded at least 3 replicate measurements."))
+      message("ic_table_deltas_pre")
       df <- ic_table_ratios_pre()
       p_cols <- grep("Delta", colnames(df))
       # for each Peak...
-      out <- ldply(p_cols, function(j) {
-        ldply(split(df, interaction(df[,"Ratio method"], df[,"Zone [%]"], drop=TRUE)), function(x) {
+      out <- plyr::ldply(p_cols, function(j) {
+        plyr::ldply(split(df, interaction(df[,"Ratio method"], df[,"Zone [%]"], drop=TRUE)), function(x) {
           tmp <- x[1, c("Ratio method","Zone [%]"), drop=FALSE]
           tmp[,"Mean Delta"] <- mean(x[,j])
           tmp[,"SD Delta"] <- sd(x[,j])
@@ -635,15 +670,17 @@ ic_app <- function() {
     
     # reset time windows (upon new data or new RT column)
     reset_times <- function() {
-      req(file_in(), input$ic_par_rt_col)
-      rng <- sapply(file_in(), function(x) { range(x[,input$ic_par_rt_col], na.rm=TRUE) })
-      cut_range$min <- min(rng[1,])
-      cut_range$max <- max(rng[2,])
-      status_range_cut("off")
-      updateActionButton(inputId = "ic_par_cut_range", label = "cut range")
-      # ...reset display range
-      spec_plots_xmin(cut_range$min)
-      spec_plots_xmax(cut_range$max)
+      req(file_in(), file_in_cols(), input$ic_par_rt_col)
+      if (input$ic_par_rt_col %in% file_in_cols()) {
+        rng <- sapply(file_in(), function(x) { range(x[,input$ic_par_rt_col], na.rm=TRUE) })
+        cut_range$min <- min(rng[1,])
+        cut_range$max <- max(rng[2,])
+        status_range_cut("off")
+        updateActionButton(inputId = "ic_par_cut_range", label = "cut range")
+        # ...reset display range
+        spec_plots_xmin(cut_range$min)
+        spec_plots_xmax(cut_range$max)
+      }
     }
     
     # update column selectors when input columns change  
@@ -660,7 +697,8 @@ ic_app <- function() {
         "icp"=file_in_cols()[4],
         "generic"=file_in_cols()[3],
         "data"=file_in_cols()[3])
-      updateSelectInput(inputId = "ic_par_rt_col", choices = I(file_in_cols()), selected = ifelse("Minutes" %in% file_in_cols(), "Minutes", file_in_cols()[1]))
+      rt_selected <- ifelse("Minutes" %in% file_in_cols(), "Minutes", file_in_cols()[1])
+      updateSelectInput(inputId = "ic_par_rt_col", choices = I(file_in_cols()), selected = rt_selected)
       #updateSelectInput(inputId = "ic_par_rt_col", choices = I(file_in_cols()), selected = input$ic_par_rt_col)
       updateSelectInput(inputId = "ic_par_mi_col", choices = I(file_in_cols()), selected = mi_selected)
       updateSelectInput(inputId = "ic_par_si_col", choices = I(file_in_cols()), selected = si_selected)
@@ -670,33 +708,19 @@ ic_app <- function() {
     # check and update time range filters when time column is changed
     observeEvent(input$ic_par_rt_col, {
       req(file_in())
-      # 
-      # # reset cut range and...
-      # rng <- sapply(file_in(), function(x) { range(x[,input$ic_par_rt_col], na.rm=TRUE) })
-      # cut_range$min <- min(rng[1,])
-      # cut_range$max <- max(rng[2,])
-      # status_range_cut("off")
-      # updateActionButton(inputId = "ic_par_cut_range", label = "cut range")
-      # # ...reset display range
-      # spec_plots_xmin(cut_range$min)
-      # spec_plots_xmax(cut_range$max)
       reset_times()
     }, ignoreInit = TRUE)
     
     # update MI/SI name inputs when input columns change
     observeEvent(input$ic_par_mi_col, {
       updateTextInput(inputId = "ic_par_mi_col_name", value = input$ic_par_mi_col)
-      l <- which(isotopes[,"isotope"] == input$ic_par_mi_col)[1]
-      val <- ifelse(is.na(l), 0, isotopes[l,"mass"])
-      updateNumericInput(inputId = "ic_par_mi_amu", value = val)
+      updateNumericInput(inputId = "ic_par_mi_amu", value = get_iso_amu(x=input$ic_par_mi_col, isotopes=isotopes))
     })
     
     # update MI/SI name inputs when input columns change
     observeEvent(input$ic_par_si_col, {
       updateTextInput(inputId = "ic_par_si_col_name", value = input$ic_par_si_col)
-      l <- which(isotopes[,"isotope"] == input$ic_par_si_col)[1]
-      val <- ifelse(is.na(l), 0, isotopes[l,"mass"])
-      updateNumericInput(inputId = "ic_par_si_amu", value = val)
+      updateNumericInput(inputId = "ic_par_si_amu", value = get_iso_amu(x=input$ic_par_si_col, isotopes=isotopes))
     })
     
     # set cut range to displayed spectrum range when user triggers this action button
@@ -802,7 +826,8 @@ ic_app <- function() {
     
     ## tables 
     output$ic_table_peaks <- renderDT({
-      #ic_table_peaks_pre()
+      req(ic_table_peaks_edit())
+      message("output$ic_table_peaks")
       DT::datatable(
         data = ic_table_peaks_edit(),
         "extensions" = "Buttons", 
@@ -814,7 +839,12 @@ ic_app <- function() {
           "scrollY" = "410px",
           "pageLength" = -1, 
           "buttons" = list(
-            'copy', 'excel',
+            'copy', 
+            list(
+              extend = 'excel',
+              title = NULL,
+              filename = "Peaktable"
+            ),
             list(
               extend = "collection",
               text = 'define mass bias correction',
@@ -829,6 +859,14 @@ ic_app <- function() {
               action = DT::JS(
                 "function ( e, dt, node, config ) {
                 Shiny.setInputValue('ic_btn_peak_type', 1, {priority: 'event'});
+                }")
+            ),
+            list(
+              extend = "collection",
+              text = 'Help',
+              action = DT::JS(
+                "function ( e, dt, node, config ) {
+                Shiny.setInputValue('ic_help06', 1, {priority: 'event'});
                 }")
             )
           )
@@ -861,7 +899,6 @@ ic_app <- function() {
         cancelButtonText = "Cancel", confirmButtonText = "Set", showCancelButton = TRUE, size = "s",
         callbackR = function(value) {
           if (value) {
-            #browser()
             tab <- ic_table_peaks_edit()
             # read pasted textArea
             tmp <- strsplit(input$txt_textAreaInput, "\n")[[1]]
@@ -886,7 +923,6 @@ ic_app <- function() {
     observeEvent(input$ic_table_peaks_rows_selected, {
       req(ic_table_peaks_edit())
       i <- input$ic_table_peaks_rows_selected
-      # browser()
       # if (is.null(i) | !("Type" %in% colnames(ic_table_peaks_edit()))) {
       #   shinyjs::disable(id = "ic_btn_peak_type")
       # } else {
@@ -969,10 +1005,11 @@ ic_app <- function() {
     
     # ratio(s) table
     output$ic_table_ratios <- renderDT({
+      message("output$ic_table_ratios")
       DT::datatable(
         data = ic_table_ratios_pre(),
-        extensions = "Buttons", 
-        options = list(
+        "extensions" = "Buttons", 
+        "options" = list(
           "server" = FALSE, 
           "dom"="Bfti", 
           "autoWidth" = TRUE,
@@ -981,7 +1018,11 @@ ic_app <- function() {
           "pageLength" = -1, 
           "buttons" = list(
             'copy',
-            'excel',
+            list(
+              extend = 'excel',
+              title = NULL,
+              filename = "Ratiotable"
+            ),
             list(
               extend = "collection",
               text = 'add new zone',
@@ -1005,6 +1046,14 @@ ic_app <- function() {
                 "function ( e, dt, node, config ) {
                 Shiny.setInputValue('ic_btn_set_coef', 1, {priority: 'event'});
                 }")
+            ),
+            list(
+              extend = "collection",
+              text = 'Help',
+              action = DT::JS(
+                "function ( e, dt, node, config ) {
+                Shiny.setInputValue('ic_help07', 1, {priority: 'event'});
+                }")
             )
           )
         ), 
@@ -1015,14 +1064,41 @@ ic_app <- function() {
     
     # delta(s) table
     output$ic_table_deltas <- renderDT({
-      ic_table_deltas_pre()
-    }, server = FALSE, extensions = "Buttons", options = list("dom"="Bfti", "pageLength"=100, buttons = c('copy', 'excel')), selection=list(mode="single", target="row"), rownames=NULL)  
+      message("output$ic_table_deltas")
+      DT::datatable(
+        data = ic_table_deltas_pre(),
+        "extensions" = "Buttons", 
+        "options" = list(
+          "server" = FALSE,
+          "dom" = "Bfti", 
+          "pageLength" = -1, 
+          "buttons" = list(
+            'copy', 
+            list(
+              "extend" = 'excel',
+              "title" = NULL,
+              "filename" = "Deltatable"
+            ),
+            list(
+              extend = "collection",
+              text = 'Help',
+              action = DT::JS(
+                "function ( e, dt, node, config ) {
+                Shiny.setInputValue('ic_help08', 1, {priority: 'event'});
+                }")
+            )
+          )
+        ),
+        "selection" = list(mode="single", target="row"),  
+        "rownames" = NULL
+      )
+    })  
     
     ## plots
     # ...
     output$ic_specplot <- renderPlot({
       req(file_in(), ic_mi_spectra(), ic_si_spectra(), input$ic_par_si_col_name, input$ic_par_mi_col_name, ic_table_peaks_edit())
-      #message("redraw spec plot")
+      message("output$ic_specplot")
       xrng <- c(spec_plots_xmin(), spec_plots_xmax())
       yrng <- c(0, max(sapply(c(ic_mi_spectra(), ic_si_spectra()), function(x) {max(x@intensity, na.rm=TRUE)})))
       par(mar = c(4.5, 4.5, 0.5, ifelse("overlay_drift" %in% input$ic_par_specplot, 4.5, 0.5)))
@@ -1067,17 +1143,14 @@ ic_app <- function() {
             rng_R <- range(sapply(peak_details, function(y) { 
               sapply(y, function(x) { quantile(x[,"Ratio"], current_drift_filter(), na.rm=TRUE)  })
             }))
-            #browser()
             #message(paste(round(rng_R,4), collapse=" | "))            
           }
           # highlight peak selected in table
           sel_pk <- input$ic_table_peaks_rows_selected
           if (!is.null(sel_pk) && pks[sel_pk,"Sample"]==idx) {
-            #browser()
             sel_pk_data <- peak_details[[ifelse(length(idx_all)==1, 1, idx)]][[pks[sel_pk,"Peak ID"]]]
             lines(x = sel_pk_data[,"RT"], y = sel_pk_data[,"Iso1"], col=cols[pks[sel_pk,"Sample"]], lwd=3)
           }
-          
           # plot symbols at peak apex
           #points(x=mass(ic_mi_peaks()[[idx]]), y=intensity(ic_mi_peaks()[[idx]]), col = 1, pch = 21, bg = cols[idx])
           if ("overlay_drift" %in% input$ic_par_specplot) {
@@ -1114,28 +1187,9 @@ ic_app <- function() {
     })
     
     # ...
-    # output$ic_deltaplot <- renderPlot({
-    #   req(ic_table_deltas_pre())
-    #   df <- ic_table_deltas_pre()
-    #   df <- df[is.finite(df[,"Mean Delta"]),]
-    #   df[,"Ratio method"] <- factor(df[,"Ratio method"], levels=c("PBP","PAI","LRS"))
-    #   cols <- c(5:7)[as.numeric(df[,"Ratio method"])]
-    #   pchs <- c(21,22,24)[as.numeric(df[,"Ratio method"])]
-    #   x <- df[,"Zone [%]"]
-    #   x <- x + c(-0.25,0,0.25)[as.numeric(df[,"Ratio method"])]
-    #   y <- df[,"Mean Delta"]
-    #   e <- df[,"SD Delta"]
-    #   par(mar = c(4.5, 4.5, 0.5, 0.5))
-    #   plot(x=range(x), y=range(rep(y,2)+rep(c(-1,1),each=length(y))*2*e), type="n", xlab="Zone [%] (values are slightly shifted to improve visibility)", ylab="Mean Delta")
-    #   legend(x = "top", horiz=TRUE, pch=c(21,22,24), pt.bg=c(5:7), legend=levels(df[,"Ratio method"]))
-    #   segments(x0 = x, y0 = y-2*e, y1 = y+2*e, col = cols)
-    #   segments(x0 = x, y0 = y-2*e, y1 = y+2*e, col = cols)
-    #   points(x = x, y = y, pch = pchs, bg = cols, cex=2)
-    # })
-    
-    # ...
     output$ic_deltaplot2 <- renderPlot({
       req(ic_table_deltas_pre())
+      message("output$ic_deltaplot2")
       df <- ic_table_deltas_pre()
       df <- df[is.finite(df[,"Mean Delta"]),]
       df[,"Ratio method"] <- factor(df[,"Ratio method"], levels=c("PBP","PAI","LRS"))
@@ -1155,71 +1209,15 @@ ic_app <- function() {
       points(x = x, y = y, pch = pchs, bg = cols, cex=2)
     })
     
-    # ...
-    # output$ic_driftplot <- renderPlot({
-    #   req(ic_table_peaks_pre(), ic_si_spectra(), ic_mi_spectra())
-    #   pks <- ic_table_peaks_pre()
-    #   i <- as.numeric(gsub("[^[:digit:]]", "", input$ic_par_focus_sample))
-    #   x <- ic_mi_peaks()[[i]]
-    #   smM <- mass(ic_mi_spectra()[[i]])
-    #   siM <- intensity(ic_mi_spectra()[[i]])
-    #   smS <- mass(ic_si_spectra()[[i]])
-    #   siS <- intensity(ic_si_spectra()[[i]])
-    #   pks_sam <- pks[pks[,"Sample"]==i,,drop=FALSE]
-    #   dfs <- lapply(pks_sam[,"Peak ID"], function(j) {
-    #     pb <- c(pks_sam[j,"Scan start"], pks_sam[j,"Scan end"])
-    #     out <- data.frame(
-    #       "RT"=smM[pb[1]:pb[2]], 
-    #       "Iso1" = siM[pb[1]:pb[2]], 
-    #       "Iso2" = siS[pb[1]:pb[2]],
-    #       "Ratio" = siS[pb[1]:pb[2]]/siM[pb[1]:pb[2]]
-    #     )
-    #     out[!is.finite(out[,"Ratio"]),"Ratio"] <- NA
-    #     return(out)
-    #   })
-    #   yrng <- range(sapply(dfs, function(x) {
-    #     range(x[,2], na.rm=TRUE)
-    #   }))
-    #   yrng2 <- range(sapply(dfs, function(x) {
-    #     quantile(x[,4], current_drift_filter(), na.rm=TRUE)
-    #   }))
-    #   ptps <- sapply(split(ic_table_peaks_edit()[,"Type"], ic_table_peaks_edit()[,"Peak ID"]), unique)
-    #   isos <- paste(input$ic_par_si_col_name, input$ic_par_mi_col_name, sep="/")
-    #   bl_method <- input$ic_par_baseline_method
-    #   par(mfrow=c(1,length(ptps)))  
-    #   for (j in 1:length(ptps)) {
-    #     plot(x=dfs[[j]][,1], y=dfs[[j]][,2], ylim=yrng, type="l", xlab="", ylab="", main=paste0("Sample ", i, ", Peak ", j, " (", ptps[j], ")"), cex.axis=1.5, cex.main=1.5)
-    #     y2 <- dfs[[j]][,"Ratio"]
-    #     y2_norm <- yrng[2]*(y2-yrng2[1])/(yrng2[2]-yrng2[1])
-    #     points(x=dfs[[j]][,1], y=y2_norm, col=grey(0.9))
-    #     #abline(h=mean(y2_norm, na.rm=T)+c(-1,0,1)*sd(y2_norm, na.rm=T), col=c(2,3,2))
-    #     at <- axTicks(side = 4)
-    #     #axis(side = 4, at=at, labels = round(100*y2[sapply(at, function(x) { which.min(abs(y2_norm-x)) })], 2), cex.axis=1.5)
-    #     axis(side = 4, at=at, labels = round(100*seq(yrng2[1], yrng2[2], length.out=length(at)), 2), cex.axis=1.5)
-    #     
-    #   }
-    # })
-    
-    shiny::observeEvent(input$ic_hlp_fileformat, {
-      help_text <- switch(
-        input$ic_par_inputformat,
-        "exp" = "tab-delimited<br>header row<br>column 'Time' exists<br>time unit in milli seconds<br>n comment rows at end",
-        "icp" = "tab-delimited<br>first column contains time in seconds<br>6 comment rows at top<br>first row contains ion names",
-        "data" = "csv<br>third column contains time in seconds<br>first 2 columns get removed",
-        "generic" = "tab-delimited<br>header row expected<br>at least 3 columns expected",
-        "undefined"
-      )
-      shiny::showModal(
-        shiny::modalDialog(
-          HTML(help_text),
-          footer = shiny::tagList(shiny::modalButton("Ok")),
-          size = "s",
-          easyClose = TRUE,
-          title = paste("Help on", input$ic_par_inputformat, "format")
-        )
-      )
-    })
-    
+    # help modals
+    shiny::observeEvent(input$ic_help01, { help_the_user(filename = "01_general") })
+    shiny::observeEvent(input$ic_help02, { help_the_user(filename = "02_file_upload") })
+    shiny::observeEvent(input$ic_help03, { help_the_user(filename = "03_import_params") })
+    shiny::observeEvent(input$ic_help04, { help_the_user(filename = "04_processing_params") })
+    shiny::observeEvent(input$ic_help05, { help_the_user(filename = "05_plot_options") })
+    shiny::observeEvent(input$ic_help06, { help_the_user(filename = "06_peak_table") })
+    shiny::observeEvent(input$ic_help07, { help_the_user(filename = "07_ratio_table") })
+    shiny::observeEvent(input$ic_help08, { help_the_user(filename = "08_delta_table") })
   
   }
   

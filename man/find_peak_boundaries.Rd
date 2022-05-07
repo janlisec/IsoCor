@@ -4,7 +4,13 @@
 \alias{find_peak_boundaries}
 \title{find_peak_boundaries}
 \usage{
-find_peak_boundaries(int = NULL, p = which.max(int), k = 3, min_scans = 3)
+find_peak_boundaries(
+  int = NULL,
+  p = which.max(int),
+  k = 3,
+  min_scans = 3,
+  noise = 0
+)
 }
 \arguments{
 \item{int}{Numeric vector (of intensity valus).}

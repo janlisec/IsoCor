@@ -1,0 +1,21 @@
+### Delta table
+
+Delta table contains mean delta and standard deviation values calculated for the sample peak. This table is generated only when several files (repeatability/reproducibility runs) are uploaded for processing
+
+#### Explanation of the column names
+
+| <div style="width:200px">Column name</div> | Description |
+| :----------- | :------------------------------------------------------------------- |
+| Ratio method | name of the isotope ratio calculation method (PAI, PBP, or LRS)      |
+| Zone [%]     | peak zone used for the isotope ratio calculation                     |
+| Mean Delta   | mean of delta                                                        |
+| SD Delta     | standard deviation of delta                                          |
+| Peak         | ID of the sample peak; helpful when one run has several sample peaks |
+
+#### Explanation of the buttons located above the table
+
+| <div style="width:200px">Button name</div> | Description |
+| :---- | :------------------------------ |
+| Copy  | to copy the entire table        |
+| Excel | to save the table as Excel file |
+| Help  | get help                        |

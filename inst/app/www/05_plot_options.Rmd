@@ -1,0 +1,23 @@
+# Plot options
+
+Plot window shows intensity of MI on y axis, RT on x axis. Intensity of SI  and IR values can superimposed by clicking the checkbox (see below). 
+
+#### Explanation of checkboxes
+
+| <div style="width:200px">Checkbox name</div> | Description                                                         |
+| :-------------------------- | :--------------------------------------------------------------------------------- |
+| show all samples            | when checked all data files are shown on the plot; when unchecked, then new dropdown menu appears where user can select one specific file to be shown on the plot  |
+| show peak boundaries        | show/hide boundaries (start and end) of the detected peaks; the boundaries are shown as vertical lines                                                             |
+| show sample IDs             | show/hide sample names (file names); the color of the sample name text matches with the color of the corresponding curve                                           |
+| overlay SI trace            | show/hide intensities of SI (secondary isotope) on the plot; by default only MI intensity is shown                                                                 |
+| overlay ratio points        | show/hide isotope ratio values calculated (with PBP method) for each peak                                                                                          |
+| correct ratio points        | show/hide corrected isotope ratio values after mass bias is correction applied.                                                                                    |
+
+#### Explanation of buttons
+
+
+| <div style="width:200px">Button name</div> | Description                                                         |
+| :-------------------------- | :--------------------------------------------------------------------------------- |
+| cut range                   |  this option helps to cut out edges of the data; for example, when start and end of the measurement are too noisy, then by cutting them out we can improve baseline correction. To cancel the cut, click "undo cut"  |
+| align rt                    |  align retention time of the samples to improve visualization of the samples; aligning doesn't affect any calculation |
+| filter points               |  quantile filter for IR value to improve visibility of the points by removing the outliers at both ends of the peaks  |
