@@ -9,7 +9,7 @@ read_raw_data(path, format = c("exp", "icp", "data", "generic"))
 \arguments{
 \item{path}{Valid filepath.}
 
-\item{format}{Character, currently only 'exp' files are supported.}
+\item{format}{Character specifying the import file format.}
 }
 \value{
 A data.frame.

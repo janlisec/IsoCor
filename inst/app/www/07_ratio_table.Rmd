@@ -38,8 +38,8 @@ The ratio table contains isotope ratios and delta values calculated for each pea
 ***IsoCor*** gives possibility to perform delta scaling using scaling coefficient **coef** in the equation below. 
 The **coef** value is added manually by the user after clicking the `set coef` button.   
 
-![Ratio table example](images/07_ratio_table_01.png)  
+$$\delta^{i/j}_{smp/std} = \left( {IR^{i/j}_{smp} \over IR^{i/j}_{work.std}} \right) \times coef - 1 ~~ \text{where:} ~~ coef = {1 \over \delta^{i/j}_{std/work.std} + 1 }  $$
 
 Delta scaling is used when samples are measured against working standard, and the working standard is measured against reference material. 
-Thus, when reporting delta values of the samples, conversion of sample delta against reference metrial is performed using above equation. 
+Thus, when reporting delta values of the samples, conversion of sample delta against reference material is performed using above equation. 
 If no scaling is needed, then **coef** is set to 1 (default value).

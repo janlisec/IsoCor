@@ -95,7 +95,7 @@ ic_app <- function() {
             shiny::h4(shiny::actionLink(inputId = "ic_help04", label = "Processing")),
             fluidRow(
               column(width = 4, numericInput(inputId = "ic_par_halfWindowSize", label = "Smoothing", value = 25, min=0, max=50, step=1) %>% bs_embed_tooltip(title = "Smoothing parameter: 'half window size' of peak. Set to '0' to omit this processing step.")),
-              column(width = 4, selectInput(inputId = "ic_par_baseline_method", label = "Baseline Correction", choices = c("none", "SNIP", "TopHat", "ConvexHull", "median"), selected = "none") %>% bs_embed_tooltip(title = "Select method for baseline estimation or 'none' to omit this processing step.")),
+              column(width = 4, selectInput(inputId = "ic_par_baseline_method", label = "Baseline Correction", choices = c("none", "SNIP", "TopHat", "ConvexHull", "median"), selected = "SNIP") %>% bs_embed_tooltip(title = "Select method for baseline estimation or 'none' to omit this processing step.")),
               column(width = 4, numericInput(inputId = "ic_par_peakpicking_SNR", label = "Peak Picking (SNR)", value = 25, min=1, max=100, step=1) %>% bs_embed_tooltip(title = "Peak picking parameter: 'Signal/Noise ratio' [range: 1..100].")),
             )
           )
@@ -534,7 +534,10 @@ ic_app <- function() {
       for (j in 1:length(sam_col)) {
         #fac <- 1000*(input$ic_par_coef - 1)
         #out[,gsub("Ratio", "Delta", colnames(out)[sam_col[j]])] <- (out[,sam_col[j]]/apply(out[,std_col,drop=FALSE], 1, mean))*fac
+        # including per mille scaling
         out[,gsub("Ratio", "Delta", colnames(out)[sam_col[j]])] <- 1000*((out[,sam_col[j]]/apply(out[,std_col,drop=FALSE], 1, mean))*current_coef()-1)
+        # without per mille scaling
+        #out[,gsub("Ratio", "Delta", colnames(out)[sam_col[j]])] <- (out[,sam_col[j]]/apply(out[,std_col,drop=FALSE], 1, mean))*current_coef()-1
       }
       # remove discarded peaks here
       if (length(dis_col)>=1) {
@@ -546,7 +549,12 @@ ic_app <- function() {
       out <- out[!(out[,"Zone [%]"]==0 & out[,"Ratio method"]=="PAI"),]
       # round values
       for (cols in grep("Ratio P", colnames(out))) { out[,cols] <- round(out[,cols], 6) }
-      for (cols in grep("Delta P", colnames(out))) { out[,cols] <- round(out[,cols], 3) }
+      for (cols in grep("Delta P", colnames(out))) { 
+        # round delta values to 3 digits
+        out[,cols] <- round(out[,cols], 3) 
+        # add per mille sign for delta column
+        colnames(out)[cols] <- paste(colnames(out)[cols], "[\u2030]")
+      }
       return(out)
     })
     
@@ -628,6 +636,8 @@ ic_app <- function() {
       }, .id = NULL)
       out[,"Mean Delta"] <- round(out[,"Mean Delta"], 3)
       out[,"SD Delta"] <- round(out[,"SD Delta"], 3)
+      # add per mille sign to colnames
+      colnames(out) <- gsub("Delta", "Delta [\u2030]", colnames(out))
       out <- out[order(out[,"Peak"], out[,"Ratio method"], out[,"Zone [%]"]),]
       return(out)
     })
@@ -1006,7 +1016,7 @@ ic_app <- function() {
     # ratio(s) table
     output$ic_table_ratios <- renderDT({
       message("output$ic_table_ratios")
-      DT::datatable(
+      dt <- DT::datatable(
         data = ic_table_ratios_pre(),
         "extensions" = "Buttons", 
         "options" = list(
@@ -1060,12 +1070,16 @@ ic_app <- function() {
         "selection" = list(mode="single", target="row"), 
         "rownames" = NULL
       )
+      #dt <- DT::formatSignif(table = dt, columns = grep("Delta", colnames(ic_table_ratios_pre())), digits = 3)
+      dt <- DT::formatCurrency(table = dt, columns = grep("Delta P", colnames(ic_table_ratios_pre())), digits = 3, currency="")
+      dt <- DT::formatCurrency(table = dt, columns = grep("Ratio P", colnames(ic_table_ratios_pre())), digits = 6, currency="")
+      return(dt)
     })
     
     # delta(s) table
     output$ic_table_deltas <- renderDT({
       message("output$ic_table_deltas")
-      DT::datatable(
+      dt <- DT::datatable(
         data = ic_table_deltas_pre(),
         "extensions" = "Buttons", 
         "options" = list(
@@ -1092,6 +1106,8 @@ ic_app <- function() {
         "selection" = list(mode="single", target="row"),  
         "rownames" = NULL
       )
+      dt <- DT::formatCurrency(table = dt, columns = grep("Delta", colnames(ic_table_deltas_pre())), digits = 3, currency="")
+      return(dt)
     })  
     
     ## plots
@@ -1191,15 +1207,15 @@ ic_app <- function() {
       req(ic_table_deltas_pre())
       message("output$ic_deltaplot2")
       df <- ic_table_deltas_pre()
-      df <- df[is.finite(df[,"Mean Delta"]),]
+      df <- df[is.finite(df[,grep("Mean Delta", colnames(df))]),]
       df[,"Ratio method"] <- factor(df[,"Ratio method"], levels=c("PBP","PAI","LRS"))
       cols <- c(5:7)[as.numeric(df[,"Ratio method"])]
       pchs <- c(21,22,24)[as.numeric(df[,"Ratio method"])]
       x <- factor(df[,"Zone [%]"])
       x_ann <- levels(x)
       x <- as.numeric(x) + c(-0.05,0,0.05)[as.numeric(df[,"Ratio method"])]
-      y <- df[,"Mean Delta"]
-      e <- df[,"SD Delta"]
+      y <- df[,grep("Mean Delta", colnames(df))]
+      e <- df[,grep("SD Delta", colnames(df))]
       par(mar = c(4.5, 4.5, 1.5, 0.5))
       plot(x=range(x)+c(-1,1)*0.1*diff(range(x)), y=range(rep(y,2)+rep(c(-1,1),each=length(y))*2*e), type="n", xlab="Zone [%] (values are slightly shifted to improve visibility)", ylab="Mean Delta", axes=F)
       axis(2); axis(1, at=1:length(x_ann), labels = x_ann); box()

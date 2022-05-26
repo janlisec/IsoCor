@@ -7,7 +7,7 @@
 #'  defining RT, MI and SI respectively.
 #'
 #'@param path Valid filepath.
-#'@param format Character, currently only 'exp' files are supported.
+#'@param format Character specifying the import file format.
 #'
 #'@examples 
 #'str(read_raw_data(path=""))
