@@ -1,7 +1,7 @@
 Package: IsoCor
 Title: Analyze isotope ratios from Inductively Coupled Plasma - Mass Spectrometry measurements in a ShinyApp
-Version: 0.1.35
-Date: 2022-05-26
+Version: 0.1.37
+Date: 2022-07-29
 Authors@R: 
     person(
       given = "Jan", 

@@ -5,7 +5,7 @@ However, the user can apply the several modifications.
 
 #### Abbreviations
 
-| <div style="width:80px">Abbr</div> | <div style="width:80px">Explanation</div> | <div style="width:80px">Effect</div> | 
+| <div style="width:80px">Abbr</div> | <div style="width:180px">Explanation</div> | <div style="width:280px">Effect</div> | 
 | :--- | :--- | :--- |
 | RT      | retention time           | select the column to be used for the x axis |
 |         |                          | specify the time `unit` shown in the plot   |
@@ -13,7 +13,7 @@ However, the user can apply the several modifications.
 | amu     | atomic mass unit         | automatically obtained by ***IsoCor*** when contained in column names   |
 |         |                          | alternatively specified by the user manually for *mass bias correction* |
 
-The isotope ratio is calculated using formula: $IR=\frac{Intensity(SI)}{Intensity(MI)}$
+The isotope ratio $R$ is calculated using formula: $R=\frac{Intensity(SI)}{Intensity(MI)}$
 
 After files are uploaded into IsoCor, the App reads column names, and shows them as a dropdown menu to make a selection for RT, MI, SI columns. 
 The App calculates IR for one pair of isotopes at once. To perform calculation of isotope ratio for several pairs, the processing should be done separately.

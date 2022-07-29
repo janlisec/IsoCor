@@ -13,6 +13,7 @@
 #'
 #'@seealso \link{iso_ratio}
 #'
+#'@import shiny
 #'@importFrom bsplus use_bs_tooltip bs_embed_tooltip %>%
 #'@importFrom DT DTOutput renderDT JS
 #'@importFrom graphics abline axTicks axis box legend lines mtext par points segments
@@ -20,7 +21,6 @@
 #'@importFrom htmltools HTML tags h2 h3 h5 div strong em p img
 #'@importFrom MALDIquant transformIntensity smoothIntensity removeBaseline detectPeaks createMassSpectrum mass intensity
 #'@importFrom plyr ldply
-#'@importFrom shiny addResourcePath fluidPage sidebarLayout sidebarPanel fluidRow column selectInput fileInput tabsetPanel tabPanel plotOutput uiOutput mainPanel helpText numericInput actionButton checkboxInput radioButtons dblclickOpts brushOpts reactiveVal isolate reactive req need observeEvent updateSelectizeInput updateNumericInput renderPrint renderPlot renderUI shinyApp updateSelectInput validate reactiveValues updateCheckboxGroupInput updateActionButton updateTextInput checkboxGroupInput tagList textInput 
 #'@importFrom shinyalert shinyalert
 #'@importFrom shinyjs useShinyjs hide show enable disable toggle
 #'@importFrom stats median rnorm sd quantile
@@ -42,7 +42,7 @@ ic_app <- function() {
     shinyjs::useShinyjs()
   )
   
-  status_line <- paste0("ver ", get_golem_config("app_version"), " (", get_golem_config("app_date"), ") jan.lisec@bam.de")
+  status_line <- paste0("v", get_golem_config("app_version"), " | ", get_golem_config("app_date"), " | jan.lisec@bam.de")
   tde <- new.env()
   utils::data("testdata", package = "IsoCor", envir = tde)
   utils::data("isotopes", package = "IsoCor", envir = tde)
@@ -51,71 +51,83 @@ ic_app <- function() {
   ui <- shiny::tagList(
     shinyjs::useShinyjs(),
     bsplus::use_bs_tooltip(),
-    shiny::tags$head(tags$link(rel = "icon", href = "www/favicon.ico")),
+    shiny::tags$head(
+      tags$link(rel = "icon", href = "www/favicon.ico"),
+      includeScript(app_sys("app/www/js/screen_height.js"))
+    ),
     fluidPage(
       title = "IsoCor",
-      sidebarLayout(
-        sidebarPanel(
+      fluidRow(
+        column(
           width = 3,
-          fluidRow(
-            column(
-              width = 4, 
+          id = "options_panel",
+          style="height: 100vh; background-color: #F5F5F5",
+          column(
+            width = 12,
+            style = "padding-top: 10px; height: 800px;",
+            fluidRow(
               shiny::div(
                 class = "verticalhorizontal",
+                style = "font-size:20px;",
                 img(src = "www/bam_logo_20pt.gif", position = "absolute", margin = "auto", alt="BAM Logo"),
                 strong("BAM"), em("IsoCor"),
                 position="relative"
               )
             ),
-            column(width = 8, helpText(status_line, align="right"))
-          ),
-          fluidRow(
-            shiny::strong("Please click", shiny::actionLink(inputId = "ic_help01", label = "here"),  "for help when you are a first time user"),
-            shiny::h4(shiny::actionLink(inputId = "ic_help02", label = "Data")),
             fluidRow(
-              column(width = 4, selectInput(inputId = "ic_par_libsource", label = "Data source", choices = list("testdata", "upload files"), selected = "testdata")),
-              column(width = 4, selectInput(inputId = "ic_par_inputformat", label = "File format", choices = list("exp", "icp", "data", "generic"), selected = "exp")),
-              column(width = 4, uiOutput(outputId = "ic_par_path_expfiles"))
-            ),
-            shiny::h4(shiny::actionLink(inputId = "ic_help03", label = "Import")),
-            fluidRow(
-              column(width = 6, selectInput(inputId = "ic_par_rt_col", label = "RT column", choices = c("")) %>% bs_embed_tooltip(title = "Select RT column.")),
-              column(width = 6, textInput(inputId = "ic_par_mi_rt_unit", label = "RT unit", value = "min"))
-            ),
-            fluidRow(
-              column(width = 4, selectInput(inputId = "ic_par_mi_col", label = "MI column", choices = c("")) %>% bs_embed_tooltip(title = "Select Master Isotope column.")),
-              column(width = 4, textInput(inputId = "ic_par_mi_col_name", label = "MI Name")),
-              column(width = 4, numericInput(inputId = "ic_par_mi_amu", label = "MI amu", value = 0, step = 0.0001))
-            ),
-            fluidRow(
-              column(width = 4, selectInput(inputId = "ic_par_si_col", label = "SI column", choices = c("")) %>% bs_embed_tooltip(title = "Select Secondary Isotope column.")),
-              column(width = 4, textInput(inputId = "ic_par_si_col_name", label = "SI Name")),
-              column(width = 4, numericInput(inputId = "ic_par_si_amu", label = "SI amu", value = 0, step = 0.0001))
-            ),
-            shiny::h4(shiny::actionLink(inputId = "ic_help04", label = "Processing")),
-            fluidRow(
-              column(width = 4, numericInput(inputId = "ic_par_halfWindowSize", label = "Smoothing", value = 25, min=0, max=50, step=1) %>% bs_embed_tooltip(title = "Smoothing parameter: 'half window size' of peak. Set to '0' to omit this processing step.")),
-              column(width = 4, selectInput(inputId = "ic_par_baseline_method", label = "Baseline Correction", choices = c("none", "SNIP", "TopHat", "ConvexHull", "median"), selected = "SNIP") %>% bs_embed_tooltip(title = "Select method for baseline estimation or 'none' to omit this processing step.")),
-              column(width = 4, numericInput(inputId = "ic_par_peakpicking_SNR", label = "Peak Picking (SNR)", value = 25, min=1, max=100, step=1) %>% bs_embed_tooltip(title = "Peak picking parameter: 'Signal/Noise ratio' [range: 1..100].")),
+              shiny::h4(shiny::actionLink(inputId = "ic_help01", label = "Help")),
+              shiny::helpText("Please click on the word 'Help' above when you are a first time user"),
+              shiny::h4(shiny::actionLink(inputId = "ic_help02", label = "Data")),
+              fluidRow(
+                column(width = 4, selectInput(inputId = "ic_par_libsource", label = "Data source", choices = list("testdata", "upload files"), selected = "testdata")),
+                column(width = 4, selectInput(inputId = "ic_par_inputformat", label = "File format", choices = list("exp", "icp", "data", "generic"), selected = "exp")),
+                column(width = 4, uiOutput(outputId = "ic_par_path_expfiles"))
+              ),
+              shiny::h4(shiny::actionLink(inputId = "ic_help03", label = "Import")),
+              fluidRow(
+                column(width = 6, selectInput(inputId = "ic_par_rt_col", label = "RT column", choices = c("")) %>% bs_embed_tooltip(title = "Select RT column.")),
+                column(width = 6, textInput(inputId = "ic_par_mi_rt_unit", label = "RT unit", value = "min"))
+              ),
+              fluidRow(
+                column(width = 4, selectInput(inputId = "ic_par_mi_col", label = "MI column", choices = c("")) %>% bs_embed_tooltip(title = "Select Master Isotope column.")),
+                column(width = 4, textInput(inputId = "ic_par_mi_col_name", label = "MI Name")),
+                column(width = 4, numericInput(inputId = "ic_par_mi_amu", label = "MI amu", value = 0, step = 0.0001))
+              ),
+              fluidRow(
+                column(width = 4, selectInput(inputId = "ic_par_si_col", label = "SI column", choices = c("")) %>% bs_embed_tooltip(title = "Select Secondary Isotope column.")),
+                column(width = 4, textInput(inputId = "ic_par_si_col_name", label = "SI Name")),
+                column(width = 4, numericInput(inputId = "ic_par_si_amu", label = "SI amu", value = 0, step = 0.0001))
+              ),
+              shiny::h4(shiny::actionLink(inputId = "ic_help04", label = "Processing")),
+              fluidRow(
+                column(width = 4, numericInput(inputId = "ic_par_halfWindowSize", label = "Smoothing", value = 25, min=0, max=50, step=1) %>% bs_embed_tooltip(title = "Smoothing parameter: 'half window size' of peak. Set to '0' to omit this processing step.")),
+                column(width = 4, selectInput(inputId = "ic_par_baseline_method", label = "Baseline Correction", choices = c("none", "SNIP", "TopHat", "ConvexHull", "median"), selected = "SNIP") %>% bs_embed_tooltip(title = "Select method for baseline estimation or 'none' to omit this processing step.")),
+                column(width = 4, numericInput(inputId = "ic_par_peakpicking_SNR", label = "Peak Picking (SNR)", value = 25, min=1, max=100, step=1) %>% bs_embed_tooltip(title = "Peak picking parameter: 'Signal/Noise ratio' [range: 1..100].")),
+              ),
+              uiOutput(outputId = "footer")
             )
           )
         ),
-    
-        mainPanel(
+        # main panel
+        column(
           width = 9,
+          id = "main_panel",
           fluidRow(
             column(
               width = 10,
+              div(style="background-color: orange; width: 20px; text-align: center;", actionLink("sidebar_button", "", icon = icon("angle-left"), style="text-align: center")),
               plotOutput(
                 outputId = "ic_specplot", 
                 height = "400px", 
                 dblclick = dblclickOpts(id = "ic_specplot_dblclick"), 
                 brush = brushOpts(id = "ic_specplot_brush", direction = "x", resetOnNew = TRUE)
-              ) %>% bs_embed_tooltip(title = "You may select a time range [Click and Drag] with the cursor to zoom. Use [Double Click] to unzoom.", placement = "left")
+              ) %>% bs_embed_tooltip(title = "You may select a time range [Click and Drag] with the cursor to zoom. Use [Double Click] to unzoom.", placement = "bottom")
             ),
             column(
               width = 2,
-              shiny::wellPanel(
+              style="height: 420px; background-color: #F5F5F5",
+              shiny::column(width=12, p(),
+              #shiny::wellPanel(
                 selectInput(inputId = "ic_par_focus_sample", label = "Focus sample", choices = list("Sample 1"=1)),
                 checkboxGroupInput(
                   inputId = "ic_par_specplot", 
@@ -182,29 +194,24 @@ ic_app <- function() {
     testdata <- get0(x = "testdata", envir = tde)
     isotopes <- get0(x = "isotopes", envir = tde)
     
-    # the editable peak table
-    ic_table_peaks_edit <- shiny::reactiveVal()
-    
     output$ic_par_path_expfiles <- renderUI({
       # file input as renderUI to allow a reset in case that the upload method is changed
       message("output$ic_par_path_expfiles")
       fileInput(inputId = "ic_par_path_expfiles", label = "Select Files", multiple = TRUE)
     })
       
-    # output$ic_par_inputformat_explained <- renderUI({
-    #   # give details of file format in case that the upload method is changed
-    #   out <- switch(
-    #     input$ic_par_inputformat,
-    #     "exp" = paste(h5("exp-Format"), "tab-delimited, header row, column 'Time', time unit in milli seconds, n comment rows at end"),
-    #     "icp" = paste(h5("icp-Format"), "tab-delimited, first column contains time in seconds, 6 comment rows at top, first row contains ion names"),
-    #     "data" = paste(h5("data"), "csv, third column contains time in seconds, first 2 columns get removed"),
-    #     "generic" = paste(h5("generic"), "tab-delimited, header row expected, at least 3 columns expected"),
-    #     HTML("undefined")
-    #   )
-    #   div(style = "padding-left: 16px", HTML(out))
-    # })
     
+    output$footer <- renderUI({
+      div(
+        #style=paste0("margin-top: ", input$CurrentScreenHeight-690, "px; display: inline-block;"),
+        style=paste0("margin-top: ", input$CurrentScreenHeight-690, "px; align: top"),
+        hr(),
+        helpText(status_line, align="left")
+      )
+    })
     ### setup reactive Values ####################################################
+    # the editable peak table
+    ic_table_peaks_edit <- shiny::reactiveVal()
     # setup plot range (min, max)
     spec_plots_xmin <- reactiveVal(0)
     spec_plots_xmax <- reactiveVal(10000)
@@ -216,6 +223,13 @@ ic_app <- function() {
     status_range_cut <- reactiveVal("off")
     # indicator if alignment is currently applied
     status_align <- reactiveVal("off")
+    # preset zone values
+    zones <- reactiveVal(c(1,0.95,0.9,0.8))
+    # preset coef value
+    current_coef <- reactiveVal(1)
+    # initial drift_filter
+    current_drift_filter <- reactiveVal(c(0.1,0.9))
+    
     
     ### internal functions #######################################################
     # define the (pre) processing steps in a functions
@@ -474,9 +488,6 @@ ic_app <- function() {
     #   validate(need(all(c("sample","standard") %in% out[,"Type"]), message = "At least 1 peak must be defined as 'standard' and 1 as 'sample'"))
     #   return(out)
     # })
-    
-    zones <- reactiveVal(c(1,0.95,0.9,0.8))
-    current_coef <- reactiveVal(1)
     
     # mi/si ratio calculation
     ic_table_ratios_pre <- reactive({
@@ -771,7 +782,6 @@ ic_app <- function() {
       }
     })
     
-    current_drift_filter <- reactiveVal(c(0.1,0.9))
     observeEvent(input$ic_par_set_drift, {
       shinyalert(
         html = TRUE,
@@ -846,13 +856,21 @@ ic_app <- function() {
           "dom" = "Bfti", 
           "autoWidth" = TRUE,
           "paging" = FALSE,
-          "scrollY" = "410px",
+          "scrollY" = input$CurrentScreenHeight-595,
           "pageLength" = -1, 
           "buttons" = list(
-            'copy', 
+            list(
+              extend = 'csv',
+              title = NULL,
+              text = '<i class="fa fa-file-csv"></i>',
+              titleAttr = 'Download table as .csv',
+              filename = "Peaktable"
+            ),
             list(
               extend = 'excel',
               title = NULL,
+              text = '<i class="fa fa-file-excel-o"></i>',
+              titleAttr = 'Download table as Excel',
               filename = "Peaktable"
             ),
             list(
@@ -873,7 +891,8 @@ ic_app <- function() {
             ),
             list(
               extend = "collection",
-              text = 'Help',
+              text = '<i class="fa fa-question"></i>',
+              titleAttr = 'Get Help on table',
               action = DT::JS(
                 "function ( e, dt, node, config ) {
                 Shiny.setInputValue('ic_help06', 1, {priority: 'event'});
@@ -1012,6 +1031,18 @@ ic_app <- function() {
       req(ic_table_peaks_edit())
       update_k()
     })
+    observeEvent(input$sidebar_button, {
+      # collapse the options side bar to make space for figure and tables output
+      shinyjs::toggle(id = "options_panel")
+      shinyjs::toggleClass("main_panel", "col-sm-9")
+      shinyjs::toggleClass("main_panel", "col-sm-12")
+      if (input$sidebar_button%%2 == 1) {
+        shiny::updateActionLink(inputId = "sidebar_button", icon = shiny::icon("angle-right"))
+      } else {
+        shiny::updateActionLink(inputId = "sidebar_button", icon = shiny::icon("angle-left"))
+      }
+      
+    })
     
     # ratio(s) table
     output$ic_table_ratios <- renderDT({
@@ -1024,13 +1055,21 @@ ic_app <- function() {
           "dom"="Bfti", 
           "autoWidth" = TRUE,
           "paging" = FALSE,
-          "scrollY" = "410px",
+          "scrollY" = input$CurrentScreenHeight-595,
           "pageLength" = -1, 
           "buttons" = list(
-            'copy',
+            list(
+              extend = 'csv',
+              title = NULL,
+              text = '<i class="fa fa-file-csv"></i>',
+              titleAttr = 'Download table as .csv',
+              filename = "Ratiotable"
+            ),
             list(
               extend = 'excel',
               title = NULL,
+              text = '<i class="fa fa-file-excel-o"></i>',
+              titleAttr = 'Download table as Excel',
               filename = "Ratiotable"
             ),
             list(
@@ -1059,7 +1098,8 @@ ic_app <- function() {
             ),
             list(
               extend = "collection",
-              text = 'Help',
+              text = '<i class="fa fa-question"></i>',
+              titleAttr = 'Get Help on table',
               action = DT::JS(
                 "function ( e, dt, node, config ) {
                 Shiny.setInputValue('ic_help07', 1, {priority: 'event'});
@@ -1083,19 +1123,31 @@ ic_app <- function() {
         data = ic_table_deltas_pre(),
         "extensions" = "Buttons", 
         "options" = list(
-          "server" = FALSE,
-          "dom" = "Bfti", 
+          "server" = FALSE, 
+          "dom"="Bfti", 
+          "autoWidth" = TRUE,
+          "paging" = FALSE,
+          "scrollY" = input$CurrentScreenHeight-595,
           "pageLength" = -1, 
           "buttons" = list(
-            'copy', 
             list(
-              "extend" = 'excel',
-              "title" = NULL,
-              "filename" = "Deltatable"
+              extend = 'csv',
+              title = NULL,
+              text = '<i class="fa fa-file-csv"></i>',
+              titleAttr = 'Download table as .csv',
+              filename = "Deltatable"
             ),
             list(
-              extend = "collection",
-              text = 'Help',
+              extend = 'excel',
+              title = NULL,
+              text = '<i class="fa fa-file-excel-o"></i>',
+              titleAttr = 'Download table as Excel',
+              filename = "Deltatable"
+            ),
+            list(
+              extend = 'collection',
+              text = '<i class="fa fa-question"></i>',
+              titleAttr = 'Get Help on table',
               action = DT::JS(
                 "function ( e, dt, node, config ) {
                 Shiny.setInputValue('ic_help08', 1, {priority: 'event'});

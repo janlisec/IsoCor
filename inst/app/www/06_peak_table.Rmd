@@ -56,12 +56,12 @@ For delta calculation, the isotope ratio of `standard` is obtained by averaging 
 
 #### Explanation of the mass bias correction
 
-***IsoCor*** performs mass bias correction according to the formula: $IR_{corrected}=IR_{measured}*K$
+***IsoCor*** performs mass bias correction according to the formula: $R_{corrected}=R_{measured} \times K$
 
 The correction factor `K` can be calculated with one of three equations that is selected by the user:  
 Linear equation: $K_{SI/MI}=1+f(amu_{SI}-amu_{MI})$  
 Russel's equation: $K_{SI/MI}=(amu_{SI}/amu_{MI})^f$  
-Exponential equation: $K_{SI/MI}=e^{f*(amu_{SI}-amu_{MI})}$
+Exponential equation: $K_{SI/MI}=e^{f \times (amu_{SI}-amu_{MI})}$
 
 After mass bias correction method is selected, the `f` values should be copy/pasted onto the placeholder. 
 Typically, `f` values are calculated from continuously introduced standard, thus number of `f` values should be same 
