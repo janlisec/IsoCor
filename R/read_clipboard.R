@@ -1,28 +1,27 @@
-#'@title read_clipboard
-#'
-#'@description \code{read_clipboard} will .
-#'
-#'@details tbd
-#'
-#'@param btn_txt btn_txt.
-#'@param n_rows 1.
-#'@param n_cols 1.
-#'
-#'@return A data.frame.
-#'
-#'@examples
-#'\dontrun{
-#'shinyApp(
-#'  ui = shiny::fluidPage(read_clipboard_UI(id = "test")), 
-#'  server = function(input, output, session) { 
-#'    tmp <- read_clipboard_Server(id = "test") 
-#'    observeEvent(tmp$d, print(tmp$d))
-#'  }
-#')
-#'}
-#'
-#'@keywords internal
-#'
+#' @title read_clipboard
+#' @description \code{read_clipboard} is a Shiny module which provides 
+#'     tabular copy paste from Excel to a Shiny-App via a textAreaInput
+#'     element.
+#' @details The module will render a button initially. This button (when
+#'     clicked) will open a textAreaInput. Here the user can paste a 
+#'     tabular range from i.e. Excel and either upload this data as
+#'     data.frame to the app or cancel the operation.
+#' @param btn_txt The label for the button which opens the textAreaInput.
+#' @param n_rows Number of rows expected in input.
+#' @param n_cols Number of columns expected in input.
+#' @return A data.frame containing the converted string from the textAreaInput.
+#' @examples
+#' \dontrun{
+#' shinyApp(
+#'   ui = shiny::fluidPage(read_clipboard_UI(id = "test")), 
+#'   server = function(input, output, session) { 
+#'     tmp <- read_clipboard_Server(id = "test") 
+#'     observeEvent(tmp$d, print(tmp$d))
+#'   }
+#' )
+#' }
+#' @keywords internal
+#' @noRd
 read_clipboard_UI <- function(id) {
   ns <- shiny::NS(id)
   shiny::tagList(

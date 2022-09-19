@@ -1,22 +1,24 @@
-#'@title find_peak_boundaries
+#' @title find_peak_boundaries
 #'
-#'@description \code{find_peak_boundaries} will find peak boundaries, based on curve derivative.
+#' @description \code{find_peak_boundaries} will find peak boundaries, based on curve derivative.
 #'
-#'@details tbd.
+#' @details tbd.
 #'
-#'@param int Numeric vector (of intensity valus).
-#'@param p Index of peak position (usually 'which.max(int)).
-#'@param k Number of scans at peak boarder to confirm peak valley.
-#'@param min_scans Minimum number of scans in front or tail.
+#' @param int Numeric vector (of intensity valus).
+#' @param p Index of peak position (usually 'which.max(int)).
+#' @param k Number of scans at peak boarder to confirm peak valley.
+#' @param min_scans Minimum number of scans in front or tail.
 #'
-#'@return A numeric vector of length 2 giving the indexes of peak start and peak end.
+#' @return A numeric vector of length 2 giving the indexes of peak start and peak end.
 #'
-#'@examples
-#'x <- sin(seq(-pi,2*pi,0.01))+1
-#'plot(x)
-#'abline(v=IsoCor:::find_peak_boundaries(x))
-#' 
-#'@keywords internal
+#' @examples
+#' \dontrun{
+#' x <- sin(seq(-pi,2*pi,0.01))+1
+#' plot(x)
+#' abline(v=find_peak_boundaries(x))
+#' }
+#' @keywords internal
+#' @noRd
 find_peak_boundaries <- function(int=NULL, p=which.max(int), k=3, min_scans=3, noise=0) {
   int[!is.finite(int)] <- 0
   int[int<=noise] <- 0

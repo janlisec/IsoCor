@@ -1,34 +1,35 @@
-#'@title ic_app
+#' @title ic_app
 #'
-#'@description \code{ic_app} will start a shiny app that allows to upload raw 
+#' @description \code{ic_app} will start a shiny app that allows to upload raw
 #'  data, process selectively and analyze different methods of ratio calculation
 #'  between two intensity traces.
 #'
-#'@details The app is described in detail in  
+#' @details The app is described in detail in
 #'  <\href{https://jali.shinyapps.io/IsoCor}{this publication}>.
 #'
-#'@references \url{https://jali.shinyapps.io/IsoCor}
+#' @references \url{https://jali.shinyapps.io/IsoCor}
 #'
-#'@return A shiny app object.
+#' @return A shiny app object.
 #'
-#'@seealso \link{iso_ratio}
+#' @seealso \link{iso_ratio}
 #'
-#'@import shiny
-#'@importFrom bsplus use_bs_tooltip bs_embed_tooltip %>%
-#'@importFrom DT DTOutput renderDT JS
-#'@importFrom graphics abline axTicks axis box legend lines mtext par points segments
-#'@importFrom grDevices grey
-#'@importFrom htmltools HTML tags h2 h3 h5 div strong em p img
-#'@importFrom MALDIquant transformIntensity smoothIntensity removeBaseline detectPeaks createMassSpectrum mass intensity
-#'@importFrom plyr ldply
-#'@importFrom shinyalert shinyalert
-#'@importFrom shinyjs useShinyjs hide show enable disable toggle
-#'@importFrom stats median rnorm sd quantile
-#'@importFrom utils data packageDate packageVersion
+#' @import shiny
+#' @importFrom bsplus use_bs_tooltip bs_embed_tooltip %>%
+#' @importFrom DT DTOutput renderDT JS
+#' @importFrom graphics abline axTicks axis box legend lines mtext par points segments
+#' @importFrom grDevices grey
+#' @importFrom htmltools HTML tags h2 h3 h5 div strong em p img
+#' @importFrom MALDIquant transformIntensity smoothIntensity removeBaseline detectPeaks createMassSpectrum mass intensity
+#' @importFrom plyr ldply
+#' @importFrom shinyalert shinyalert
+#' @importFrom shinyjs useShinyjs hide show enable disable toggle
+#' @importFrom stats median rnorm sd quantile
+#' @importFrom utils data packageDate packageVersion
 #'
-#'@export
+#' @export
 ic_app <- function() {
 
+  # prepare the app environment ----
   golem::add_resource_path(
     'www', app_sys('app/www')
   )
@@ -47,7 +48,7 @@ ic_app <- function() {
   utils::data("testdata", package = "IsoCor", envir = tde)
   utils::data("isotopes", package = "IsoCor", envir = tde)
 
-  # Define UI for application that draws a histogram
+  # set up app UI ----
   ui <- shiny::tagList(
     shinyjs::useShinyjs(),
     bsplus::use_bs_tooltip(),
@@ -183,12 +184,16 @@ ic_app <- function() {
     )
   )
   
-  # Define server logic
+  # Define server logic ----
   server <- function(input, output, session) {
   
     ### setup Options ############################################################
     # increase maximum file size for upload
+    old_options <- options()
+    on.exit(options(old_options))
     options(shiny.maxRequestSize=30*1024^2) # BrukerFlex Files are >5MB
+    old_par <- par(no.readonly = TRUE)
+    on.exit(par(old_par))
   
     # load testdata on app start
     testdata <- get0(x = "testdata", envir = tde)
@@ -199,16 +204,15 @@ ic_app <- function() {
       message("output$ic_par_path_expfiles")
       fileInput(inputId = "ic_par_path_expfiles", label = "Select Files", multiple = TRUE)
     })
-      
     
     output$footer <- renderUI({
       div(
-        #style=paste0("margin-top: ", input$CurrentScreenHeight-690, "px; display: inline-block;"),
         style=paste0("margin-top: ", input$CurrentScreenHeight-690, "px; align: top"),
         hr(),
         helpText(status_line, align="left")
       )
     })
+    
     ### setup reactive Values ####################################################
     # the editable peak table
     ic_table_peaks_edit <- shiny::reactiveVal()
@@ -294,7 +298,7 @@ ic_app <- function() {
           out <- try(lapply(input$ic_par_path_expfiles$datapath, function(x) {
             read_raw_data(path=x, format=input$ic_par_inputformat)
           }))
-          if (class(out)=="try-error") {
+          if (inherits(x = out, what = "try-error")) {
             out <- NULL
           } else {
             names(out) <- input$ic_par_path_expfiles$name
@@ -336,7 +340,7 @@ ic_app <- function() {
       return(colnames(file_in()[[1]]))
     })
     
-    # convert input tables into MALDIquant spectra format for selected MI trace and RT column
+    # convert input tables into MALDIquant spectra format for selected MI trace and RT column ----
     ic_mi_spectra_raw <- reactive({
       req(file_in(), input$ic_par_rt_col, input$ic_par_mi_col, cut_range$min, rt_shift())
       validate(need(all(c(input$ic_par_rt_col, input$ic_par_mi_col) %in% file_in_cols()), message = "Selected columns inconsistent with currently uploaded data"))
@@ -354,13 +358,16 @@ ic_app <- function() {
           createMassSpectrum(
             mass = m,
             intensity = i,
-            metaData = list(name="Name")
+            metaData = list(
+              name = "Name",
+              file = names(file_in())[k]
+            )
           )
         )
       })
     })
     
-    # convert input tables into MALDIquant spectra format for selected SI trace and RT column
+    # convert input tables into MALDIquant spectra format for selected SI trace and RT column ----
     ic_si_spectra_raw <- reactive({
       req(file_in(), input$ic_par_rt_col, input$ic_par_mi_col, cut_range$min)
       validate(need(all(sapply(file_in(), function(x) { all(diff(x[,input$ic_par_rt_col])>0) })), message = "You selected a time column with non continuous values"))
@@ -377,13 +384,16 @@ ic_app <- function() {
           createMassSpectrum(
             mass = m,
             intensity = i,
-            metaData = list(name="Name")
+            metaData = list(
+              name = "Name",
+              file = names(file_in())[k]
+            )
           )
         )
       })
     })
     
-    # provide spectra based on processed raw data
+    # provide spectra based on processed raw data ----
     ic_mi_spectra <- reactive({
       req(ic_mi_spectra_raw(), input$ic_par_halfWindowSize, input$ic_par_baseline_method, input$ic_par_peakpicking_SNR)
       message("ic_mi_spectra")
@@ -393,7 +403,7 @@ ic_app <- function() {
       MALDIquant_pre_process(ic_mi_spectra_raw())
     })
   
-    # provide spectra based on processed raw data
+    # provide spectra based on processed raw data ----
     ic_si_spectra <- reactive({
       req(ic_si_spectra_raw())
       message("ic_si_spectra")
@@ -403,7 +413,7 @@ ic_app <- function() {
       MALDIquant_pre_process(ic_si_spectra_raw())
     })
     
-    # identify peaks in processed mi spectra
+    # identify peaks in processed mi spectra ----
     ic_mi_peaks <- reactive({
       req(ic_mi_spectra())
       message("ic_mi_peaks")
@@ -411,7 +421,7 @@ ic_app <- function() {
       lapply(ic_mi_spectra(), MALDIquant_peaks)
     })
     
-    # mi peak table
+    # mi peak table ----
     ic_table_peaks_pre <- reactive({
       req(ic_mi_peaks())
       message("ic_table_peaks_pre")
@@ -489,7 +499,7 @@ ic_app <- function() {
     #   return(out)
     # })
     
-    # mi/si ratio calculation
+    # mi/si ratio calculation ----
     ic_table_ratios_pre <- reactive({
       req(ic_table_peaks_edit(), ic_si_spectra(), ic_mi_spectra(), zones())
       pks <- ic_table_peaks_edit()
@@ -569,6 +579,7 @@ ic_app <- function() {
       return(out)
     })
     
+    # add or remove zone levels ----
     observeEvent(input$ic_btn_add_zone, {
       shinyalert(
         html = TRUE,
@@ -613,6 +624,7 @@ ic_app <- function() {
       )
     })
     
+    # set coef ----
     observeEvent(input$ic_btn_set_coef, {
       shinyalert(
         html = TRUE,
@@ -628,7 +640,7 @@ ic_app <- function() {
       )
     })
     
-    # delta calculation in case of at least 3 input files
+    # delta calculation in case of at least 3 input files ---
     ic_table_deltas_pre <- reactive({
       req(ic_table_ratios_pre())
       validate(need(length(ic_si_spectra())>=3, message = "This view is only available if you uploaded at least 3 replicate measurements."))
@@ -653,8 +665,7 @@ ic_app <- function() {
       return(out)
     })
     
-    ### observers on input fields ################################################
-    # table of peaks of 'new sample'
+    # table of peaks of 'new sample' ----
     shiny::observeEvent(ic_table_peaks_pre(), {
       tmp <- ic_table_peaks_pre()
       if (all(table(tmp[,"Peak ID"])==max(tmp[,"Sample"]))) {
@@ -669,13 +680,13 @@ ic_app <- function() {
       ic_table_peaks_edit(tmp)
     })
     
-    # change plot range upon user mouse interaction (click and drag)
+    # change plot range upon user mouse interaction (click and drag) ----
     observeEvent(input$ic_specplot_brush, {
       spec_plots_xmin(input$ic_specplot_brush$xmin)
       spec_plots_xmax(input$ic_specplot_brush$xmax)
     })
     
-    # change plot range upon user mouse interaction (double click)
+    # change plot range upon user mouse interaction (double click) ----
     observeEvent(input$ic_specplot_dblclick, {
       req(ic_mi_spectra())
       rng <- range(sapply(ic_mi_spectra(), function(x) { range(mass(x), na.rm=TRUE) }))
@@ -683,7 +694,7 @@ ic_app <- function() {
       spec_plots_xmax(rng[2])
     })
     
-    # show fileUpload only when data source is set to 'upload files'
+    # show fileUpload only when data source is set to 'upload files' ----
     observeEvent(input$ic_par_libsource, {
       toggle(id = "ic_par_path_expfiles", condition = input$ic_par_libsource=="upload files")
       toggle(id = "ic_par_inputformat", condition = input$ic_par_libsource=="upload files")
@@ -803,48 +814,8 @@ ic_app <- function() {
       )
       
     })
-    
-    ### outputs ##################################################################
-    ## UI output
-    # peak-type table with user select inputs
-    # output$ic_peaks_type_div <- renderUI({
-    #   ic_n_valid_peaks()
-    #   # specify initial peak-type vector
-    #   type <- c("standard", rep("sample", ic_n_valid_peaks()-2), "standard")
-    #   if (length(type)==2) type[2] <- "sample"
-    #   # mini_div function
-    #   mini_div <- function(i) {
-    #     fluidRow(div(
-    #       id = paste0("div_ic_pt", i),
-    #       style = "display: block; padding-left: 10px; line-height: 20px; margin-bottom: 2px",
-    #       class="ptcell", 
-    #       div(style = "float: left; margin-bottom: 0px; width: 20px; margin-right:5px; text-align: right; padding-top: 7px;", i), 
-    #       div(style = "float: left; margin-bottom: 0px; width: 120px;", 
-    #         selectInput(
-    #           inputId = paste0("ic_pt",i), 
-    #           label = NULL, 
-    #           choices = c("sample","standard","discard"),
-    #           width = "100%",
-    #           selected = type[i]
-    #         )
-    #       )
-    #     ))
-    #   }
-    #   # return tagList and formatting options
-    #   tagList(
-    #     div(style="float: left; margin-bottom: 0px; width: 20px; margin-right:5px; font-weight: 700; font-size: 14px; text-align: right", "ID"),
-    #     div(style="float: left; margin-bottom: 0px; width: 120px; font-weight: 700; font-size: 14px; text-align: left", "Peak-Type"),
-    #     shiny::br(),
-    #     #fluidRow(column(2, strong("ID")), column(10, strong("Type"))),
-    #     lapply(1:ic_n_valid_peaks(), mini_div),
-    #     # tags$head(tags$style(HTML(".ptcell .h5 { text-align: center; }"))),
-    #     tags$head(tags$style(HTML(".ptcell .selectize-control { margin-bottom: 0px }"))),
-    #     tags$head(tags$style(HTML(".ptcell .control-label { margin-bottom: 0px }"))),
-    #     tags$head(tags$style(HTML(".ptcell .form-group { margin-bottom: 0px }")))
-    #   )
-    # })
-    
-    ## tables 
+ 
+    # peak table output and associated action buttons ----
     output$ic_table_peaks <- renderDT({
       req(ic_table_peaks_edit())
       message("output$ic_table_peaks")
@@ -856,7 +827,7 @@ ic_app <- function() {
           "dom" = "Bfti", 
           "autoWidth" = TRUE,
           "paging" = FALSE,
-          "scrollY" = input$CurrentScreenHeight-595,
+          "scrollY" = screen_height()-595,
           "pageLength" = -1, 
           "buttons" = list(
             list(
@@ -906,6 +877,7 @@ ic_app <- function() {
       )
     })
     
+    # apply mass bias correction using table action button
     current_mb_method <- reactiveVal("none")
     shiny::observeEvent(input$ic_btn_mass_bias, {
       shinyalert(
@@ -952,14 +924,6 @@ ic_app <- function() {
     observeEvent(input$ic_table_peaks_rows_selected, {
       req(ic_table_peaks_edit())
       i <- input$ic_table_peaks_rows_selected
-      # if (is.null(i) | !("Type" %in% colnames(ic_table_peaks_edit()))) {
-      #   shinyjs::disable(id = "ic_btn_peak_type")
-      # } else {
-      #   if ("Type" %in% colnames(ic_table_peaks_edit())) {
-      #     shinyjs::enable(id = "ic_btn_peak_type")
-      #     updateActionButton(inputId = "ic_btn_peak_type", label = paste("set type for peak", i))
-      #   }
-      # }
     }, ignoreNULL = FALSE)
     
     shiny::observeEvent(input$ic_btn_peak_type, {
@@ -1044,7 +1008,13 @@ ic_app <- function() {
       
     })
     
-    # ratio(s) table
+    screen_height <- reactiveVal(960)
+    observe({
+      invalidateLater(3000)
+      screen_height(input$CurrentScreenHeight)
+    })
+    
+    # ratio(s) table ----
     output$ic_table_ratios <- renderDT({
       message("output$ic_table_ratios")
       dt <- DT::datatable(
@@ -1055,7 +1025,7 @@ ic_app <- function() {
           "dom"="Bfti", 
           "autoWidth" = TRUE,
           "paging" = FALSE,
-          "scrollY" = input$CurrentScreenHeight-595,
+          "scrollY" = screen_height()-595,
           "pageLength" = -1, 
           "buttons" = list(
             list(
@@ -1116,7 +1086,7 @@ ic_app <- function() {
       return(dt)
     })
     
-    # delta(s) table
+    # delta(s) table ----
     output$ic_table_deltas <- renderDT({
       message("output$ic_table_deltas")
       dt <- DT::datatable(
@@ -1127,7 +1097,7 @@ ic_app <- function() {
           "dom"="Bfti", 
           "autoWidth" = TRUE,
           "paging" = FALSE,
-          "scrollY" = input$CurrentScreenHeight-595,
+          "scrollY" = screen_height()-595,
           "pageLength" = -1, 
           "buttons" = list(
             list(
@@ -1162,99 +1132,27 @@ ic_app <- function() {
       return(dt)
     })  
     
-    ## plots
-    # ...
+    # spectrum plot ----
     output$ic_specplot <- renderPlot({
       req(file_in(), ic_mi_spectra(), ic_si_spectra(), input$ic_par_si_col_name, input$ic_par_mi_col_name, ic_table_peaks_edit())
       message("output$ic_specplot")
-      xrng <- c(spec_plots_xmin(), spec_plots_xmax())
-      yrng <- c(0, max(sapply(c(ic_mi_spectra(), ic_si_spectra()), function(x) {max(x@intensity, na.rm=TRUE)})))
-      par(mar = c(4.5, 4.5, 0.5, ifelse("overlay_drift" %in% input$ic_par_specplot, 4.5, 0.5)))
-      plot(x = xrng, y = yrng, type = "n", xaxs = "i", xlab=paste0("Time [", input$ic_par_mi_rt_unit, "]"), ylab="Intensity [V]")
-      if ("overlay_mi" %in% input$ic_par_specplot) {
-        idx_all <- 1:length(ic_mi_spectra())
-        cols <- 2:(length(idx_all)+1)
-      } else {
-        idx_all <- as.numeric(gsub("[^[:digit:]]", "", input$ic_par_focus_sample))
-        cols <- rep(1, idx_all)
-      }
-      for (idx in idx_all) {
-        if ("overlay_legend" %in% input$ic_par_specplot) {
-          mtext(text = paste0("[",idx,"] ", names(file_in())[idx]), side = 3, line = -1.15*idx, adj = 0.02, font = 1, col=cols[idx])
-        }
-        sm <- mass(ic_mi_spectra()[[idx]])
-        si <- intensity(ic_mi_spectra()[[idx]])
-        flt <- sm>=spec_plots_xmin() & sm<=spec_plots_xmax()
-        lines(x = sm[flt], y = si[flt], col=cols[idx])
-        if ("overlay_si" %in% input$ic_par_specplot) {
-          lines(
-            x = mass(ic_si_spectra()[[idx]])[flt],
-            y = intensity(ic_si_spectra()[[idx]])[flt],
-            col=cols[idx])
-        }
-        if (!is.null(ic_mi_peaks()) && length(ic_mi_peaks()[[idx]]@mass)>=1) {
-          pks <- ic_table_peaks_edit()
-          if (idx==idx_all[1]) {
-            peak_details <- lapply(idx_all, function (idx) {
-              tmp <- pks[pks[,"Sample"]==idx,,drop=FALSE]
-              lapply(tmp[,"Peak ID"], function(j) {
-                pb <- c(tmp[j,"Scan start"], tmp[j,"Scan end"])
-                out <- data.frame("RT"=mass(ic_mi_spectra()[[idx]])[pb[1]:pb[2]], "Iso1" = intensity(ic_mi_spectra()[[idx]])[pb[1]:pb[2]], "Iso2" = intensity(ic_si_spectra()[[idx]])[pb[1]:pb[2]])
-                out[,"Ratio"] <- out[,3]/out[,2]
-                if ("correct_drift" %in% input$ic_par_specplot) {
-                  out[,"Ratio"] <- out[,"Ratio"]*tmp[j,"k"]
-                }
-                out[!is.finite(out[,"Ratio"]),"Ratio"] <- NA
-                return(out)
-              })
-            })
-            rng_R <- range(sapply(peak_details, function(y) { 
-              sapply(y, function(x) { quantile(x[,"Ratio"], current_drift_filter(), na.rm=TRUE)  })
-            }))
-            #message(paste(round(rng_R,4), collapse=" | "))            
-          }
-          # highlight peak selected in table
-          sel_pk <- input$ic_table_peaks_rows_selected
-          if (!is.null(sel_pk) && pks[sel_pk,"Sample"]==idx) {
-            sel_pk_data <- peak_details[[ifelse(length(idx_all)==1, 1, idx)]][[pks[sel_pk,"Peak ID"]]]
-            lines(x = sel_pk_data[,"RT"], y = sel_pk_data[,"Iso1"], col=cols[pks[sel_pk,"Sample"]], lwd=3)
-          }
-          # plot symbols at peak apex
-          #points(x=mass(ic_mi_peaks()[[idx]]), y=intensity(ic_mi_peaks()[[idx]]), col = 1, pch = 21, bg = cols[idx])
-          if ("overlay_drift" %in% input$ic_par_specplot) {
-            max_I <- max(yrng)
-            dfs <- lapply(peak_details[[ifelse(length(idx_all)==1, 1, idx)]], function(x) {
-              flt <- is.finite(x[,"Ratio"])
-              y <- x[flt,"Ratio"]-rng_R[1]
-              x[flt,"Ratio_norm"] <- y*(max_I/diff(rng_R))
-              return(x)
-            })
-            for (j in 1:length(dfs)) {
-              points(x=dfs[[j]][,"RT"], y=dfs[[j]][,"Ratio_norm"], pch=".", col=cols[idx])
-            }
-            if (idx==idx_all[1]) {
-              at <- axTicks(side = 4)
-              #at_val <- dfs[[1]][,"Ratio"][sapply(at, function(x) { which.min(abs(dfs[[1]][,"Ratio_norm"]-x)) })]
-              at_val <- seq(rng_R[1], rng_R[2], length.out=length(at))
-              at_test <- all(at_val<1)
-              at_val <- round(ifelse(at_test,100,1)*at_val, ifelse(at_test,2,1))
-              axis(side = 4, at=at, labels = at_val)
-              mtext(text = paste0(input$ic_par_si_col_name, "/", input$ic_par_mi_col_name, ifelse(at_test," [%]","")), side = 4, adj=0.5, line=3)
-            }
-          }
-          if ("overlay_pb" %in% input$ic_par_specplot) {
-            pks_sam <- pks[pks[,"Sample"]==idx,]
-            for (j in 1:nrow(pks_sam)) { 
-              pb <- c(pks_sam[j,"Scan start"], pks_sam[j,"Scan end"])
-              abline(v=sm[pb], col=cols[idx])
-              mtext(text = j, side = 1, at = sm[pb[1]], adj = 0, line = -1.1, col=cols[idx])
-            }
-          }
-        }
-      }
+      #browser()
+      ic_specplot(
+        opt = input$ic_par_specplot, 
+        xrng = c(spec_plots_xmin(), spec_plots_xmax()),
+        mi_spec = ic_mi_spectra(),
+        si_spec = ic_si_spectra(),
+        xlab = paste0("Time [", input$ic_par_mi_rt_unit, "]"),
+        ylab2 = paste0(input$ic_par_si_col_name, "/", input$ic_par_mi_col_name),
+        s_focus = input$ic_par_focus_sample,
+        pks = ic_table_peaks_edit(),
+        mi_pks = ic_mi_peaks(),
+        cdf = current_drift_filter(),
+        sel_pk = input$ic_table_peaks_rows_selected
+      )
     })
     
-    # ...
+    # delta plot ----
     output$ic_deltaplot2 <- renderPlot({
       req(ic_table_deltas_pre())
       message("output$ic_deltaplot2")
@@ -1277,7 +1175,7 @@ ic_app <- function() {
       points(x = x, y = y, pch = pchs, bg = cols, cex=2)
     })
     
-    # help modals
+    # help modals ----
     shiny::observeEvent(input$ic_help01, { help_the_user(filename = "01_general") })
     shiny::observeEvent(input$ic_help02, { help_the_user(filename = "02_file_upload") })
     shiny::observeEvent(input$ic_help03, { help_the_user(filename = "03_import_params") })
