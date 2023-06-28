@@ -1,3 +1,31 @@
+#' @title get_iso_amu.
+#' @description \code{get_iso_amu} will take a string and try to identify an
+#'   isotope name contained within. It will return the amu for this isotope.
+#' @param x character.
+#' @param isotopes Two column dataframe with isotope definitions.
+#' @examples 
+#' \dontrun{
+#' get_iso_amu(x="198Hg")
+#' get_iso_amu(x="198Hg_corr")
+#' get_iso_amu(x="X_32S_corr")
+#' get_iso_amu(x="15S")
+#' }
+#' @return A single numeric value (0 in case that no isotope could be identified).
+#' @keywords internal
+#' @noRd
+get_iso_amu <- function(x, isotopes=data.frame("isotope"=c("198Hg","32S"), "mass"=c(197.999,31.995))) {
+  x <- as.character(x[1])
+  val <- 0
+  l <- which(isotopes[,"isotope"] == x)[1]
+  if (!is.na(l)) { 
+    val <- isotopes[l,"mass"]
+  } else {
+    l <- unlist(sapply(isotopes[,"isotope"], function(i) {grep(i, x)}))
+    if (length(l)>=1) val <- isotopes[isotopes[,"isotope"] == names(l),"mass"][1]
+  }
+  return(val)
+}
+
 #' @title read_clipboard
 #' @description \code{read_clipboard} is a Shiny module which provides 
 #'     tabular copy paste from Excel to a Shiny-App via a textAreaInput
@@ -52,30 +80,30 @@ read_clipboard_Server <- function(id, btn_txt=shiny::reactiveVal(NULL), n_rows=s
     
     output$area_input <- shiny::renderUI({
       shiny::tagList(
-      shiny::fluidRow(
-        shiny::textAreaInput(
-          inputId = ns("txt_textAreaInput"),
-          label = "",
-          placeholder = paste("copy/paste a numeric Excel range of", n_cols(), "columns and", n_rows(), "rows."),
-          width="100%",
-          rows=12
-        )
-      ),
-      shiny::fluidRow(
-        actionButton(ns("btn_textAreaInput"), "Click to upload data"), p(),
-        actionButton(ns("btn_textAreaInput2"), "Close text input area")
-      ))
+        shiny::fluidRow(
+          shiny::textAreaInput(
+            inputId = ns("txt_textAreaInput"),
+            label = "",
+            placeholder = paste("copy/paste a numeric Excel range of", n_cols(), "columns and", n_rows(), "rows."),
+            width="100%",
+            rows=12
+          )
+        ),
+        shiny::fluidRow(
+          actionButton(ns("btn_textAreaInput"), "Click to upload data"), p(),
+          actionButton(ns("btn_textAreaInput2"), "Close text input area")
+        ))
     })
-
+    
     shiny::observeEvent(input$btn_main, {
       shiny::updateTextAreaInput(inputId = "txt_textAreaInput", value = "")
       shinyjs::show(id = "area_input")
     })
-
+    
     shiny::observeEvent(input$btn_textAreaInput2, {
       shinyjs::hide(id = "area_input")
     })
-
+    
     shiny::observeEvent(input$btn_textAreaInput, {
       # read clipboard
       #tmp <- data.table::fread(paste(input$area_input, collapse = "\n"))
@@ -100,6 +128,39 @@ read_clipboard_Server <- function(id, btn_txt=shiny::reactiveVal(NULL), n_rows=s
     }, ignoreInit = TRUE)
     
     return(out)
-  
+    
   })
+}
+
+#' @title help_the_user
+#' @description Help Window: opens a modal with respective Help text 
+#'     (rendered from Rmd source file) for users.
+#' @param filename Name of the file as string (if necessary, containing also path).
+#' @return Returns the help text as HTML (opens a modal with helpt text as side effect).
+#' @keywords internal
+#' @noRd
+#' @importFrom markdown markdownToHTML
+help_the_user <- function(filename) {
+  file_in <- list.files(path = shiny::resourcePaths()["www"], pattern = paste0(filename, ".[Rr][Mm][Dd]$"), recursive = TRUE, full.names = TRUE)[1]
+  help_text <- NULL
+  if (!file.exists(file_in)) {
+    message("[help_the_user] cant find help file: ", file_in)
+  } else {
+    help_text <- 
+      shiny::showModal(
+        shiny::modalDialog(
+          shiny::withMathJax(
+            shiny::HTML(
+              #markdown::markdownToHTML(file = file_in, fragment.only = TRUE, extensions = c("tables","autolink","latex_math","superscript"))
+              markdown::markdownToHTML(file = file_in, fragment.only = TRUE)
+            )
+          ),
+          size = "l",
+          easyClose = TRUE,
+          footer = NULL,
+          title = NULL
+        )
+      )
+  }
+  invisible(NULL)
 }

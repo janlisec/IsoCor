@@ -6,7 +6,7 @@ golem::detach_all_attached()
 # rm(list=ls(all.names = TRUE))
 
 # Document and reload your package
-golem::document_and_reload(pkg = "C:/Users/jlisec/Rpackages/Rpackage_IsoCor/isocor")
+golem::document_and_reload(pkg = "C:/Users/jlisec/Documents/Rpackages/Rpackage_IsoCor/isocor")
 
 # Run the application
-shiny::runApp(appDir = "C:/Users/jlisec/Rpackages/Rpackage_IsoCor/isocor")
+shiny::runApp(appDir = "C:/Users/jlisec/Documents/Rpackages/Rpackage_IsoCor/isocor")

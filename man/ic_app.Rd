@@ -15,8 +15,7 @@ data, process selectively and analyze different methods of ratio calculation
 between two intensity traces.
 }
 \details{
-The app is described in detail in
-<\href{https://jali.shinyapps.io/IsoCor}{this publication}>.
+The app is described in detail in \doi{10.1039/D2JA00208F}.
 }
 \references{
 \url{https://jali.shinyapps.io/IsoCor}
