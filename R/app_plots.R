@@ -143,6 +143,7 @@ ic_deltaplot <- function(df) {
   x <- as.numeric(x) + c(-0.05,0,0.05)[as.numeric(df[,"Ratio method"])]
   y <- df[,grep("Mean Delta", colnames(df))]
   e <- df[,grep("SD Delta", colnames(df))]
+  validate(need(all(c(any(is.finite(x)), any(is.finite(y)), any(is.finite(e)))), "No finite plotting data available."))
   par(mar = c(4.5, 4.5, 1.5, 0.5))
   plot(x=range(x)+c(-1,1)*0.1*diff(range(x)), y=range(rep(y,2)+rep(c(-1,1),each=length(y))*2*e), type="n", xlab="Zone [%] (values are slightly shifted to improve visibility)", ylab="Mean Delta", axes=F)
   axis(2); axis(1, at=1:length(x_ann), labels = x_ann); box()

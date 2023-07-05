@@ -4,7 +4,10 @@
 \alias{ic_app}
 \title{ic_app}
 \usage{
-ic_app()
+ic_app(...)
+}
+\arguments{
+\item{...}{Options passed to golem::with_golem_options.}
 }
 \value{
 A shiny app object.

@@ -167,7 +167,7 @@ read_raw_data <- function(path, format = c("exp", "icp", "data", "generic")) {
 #' @title find_peak_boundaries
 #' @description \code{find_peak_boundaries} will find the start and end point
 #'     of a peak based on curve derivative.
-#' @details This function provides a simle detection algorithm for peak boundaries.
+#' @details This function provides a simple detection algorithm for peak boundaries.
 #'     It will accept a numeric vector as input and determine relative to the global maximum
 #'     (or a user provided local maximum) the left and right border where intensity decrease
 #'     ends and intensity is increasing again.
@@ -183,8 +183,7 @@ read_raw_data <- function(path, format = c("exp", "icp", "data", "generic")) {
 #' plot(x)
 #' abline(v=find_peak_boundaries(x))
 #' }
-#' @keywords internal
-#' @noRd
+#' @export
 find_peak_boundaries <- function(int=NULL, p=which.max(int), k=3, min_scans=3, noise=0) {
   int[!is.finite(int)] <- 0
   int[int<=noise] <- 0
