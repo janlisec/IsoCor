@@ -96,10 +96,11 @@ app_ui <- function() {
                 column(width = 4, numericInput(inputId = "ic_par_si_amu", label = "SI amu", value = 0, step = 0.0001))
               ),
               shiny::div(id = "IDMS_par_section",
-                shiny::h4(shiny::actionLink(inputId = "ic_help04", label = "IDMS Parameters")),
+                shiny::h4(shiny::actionLink(inputId = "ic_help10", label = "IDMS Parameters")),
                 fluidRow(
                   column(width = 4, numericInput(inputId = "ic_par_IDMS_f", label = "IDMS f-value", value = 0.8876311)),
-                  column(width = 4, selectInput(inputId = "ic_par_IDMS_mb_method", label = "Mass bias method", choices = c("none","Linear","Russel","Exponential"), selected = "Russel"))
+                  column(width = 4, selectInput(inputId = "ic_par_IDMS_mb_method", label = "Mass bias method", choices = c("none","Linear","Russel","Exponential"), selected = "Russel")),
+                  column(width = 4, numericInput(inputId = "ic_par_IDMS_halfWindowSize", label = "Smoothing", value = 100, min=0, max=100, step=1))
                 ),
                 shiny::h5("Sample related Parameters"),
                 fluidRow(
@@ -114,16 +115,18 @@ app_ui <- function() {
                   column(width = 4, numericInput(inputId = "ic_par_MF_Spike", label = "MF", value = 4.78881))
                 )
               ),
-              shiny::h4(shiny::actionLink(inputId = "ic_help04", label = "Processing")),
-              fluidRow(
-                column(width = 4, numericInput(inputId = "ic_par_halfWindowSize", label = "Smoothing", value = 25, min=0, max=50, step=1) %>% bs_embed_tooltip(title = "Smoothing parameter: 'half window size' of peak. Set to '0' to omit this processing step.")),
-                column(width = 4, selectInput(inputId = "ic_par_baseline_method", label = "Baseline Correction", choices = c("none", "SNIP", "TopHat", "ConvexHull", "median"), selected = "SNIP") %>% bs_embed_tooltip(title = "Select method for baseline estimation or 'none' to omit this processing step.")),
-                column(
-                  width = 4, 
-                  numericInput(inputId = "ic_par_peakpicking_SNR", label = "Peak Picking (SNR)", value = 25, min=1, max=100, step=1) %>% bs_embed_tooltip(title = "Peak picking parameter: 'Signal/Noise ratio' [range: 1..100]."),
-                  numericInput(inputId = "ic_par_peakpicking_k", label = "Peak Picking (k)", value = 3, min=3, max=7, step=1) %>% bs_embed_tooltip(title = "Peak picking parameter: 'Peak border min count' [range: 3..7]."),
-                  checkboxInput(inputId = "ic_par_peakpicking_noise", label = "Peak Picking (noise)", value = TRUE) %>% bs_embed_tooltip(title = "Peak picking parameter: 'use noise cutoff' [TRUE/FALSE].")
-                ),
+              shiny::div(id = "Processing_par_section",
+                shiny::h4(shiny::actionLink(inputId = "ic_help04", label = "Processing")),
+                fluidRow(
+                  column(width = 4, numericInput(inputId = "ic_par_halfWindowSize", label = "Smoothing", value = 25, min=0, max=100, step=1) %>% bs_embed_tooltip(title = "Smoothing parameter: 'half window size' of peak. Set to '0' to omit this processing step.")),
+                  column(width = 4, selectInput(inputId = "ic_par_baseline_method", label = "Baseline Correction", choices = c("none", "SNIP", "TopHat", "ConvexHull", "median"), selected = "SNIP") %>% bs_embed_tooltip(title = "Select method for baseline estimation or 'none' to omit this processing step.")),
+                  column(
+                    width = 4, 
+                    numericInput(inputId = "ic_par_peakpicking_SNR", label = "Peak Picking (SNR)", value = 25, min=1, max=100, step=1) %>% bs_embed_tooltip(title = "Peak picking parameter: 'Signal/Noise ratio' [range: 1..100]."),
+                    numericInput(inputId = "ic_par_peakpicking_k", label = "Peak Picking (k)", value = 3, min=3, max=7, step=1) %>% bs_embed_tooltip(title = "Peak picking parameter: 'Peak border min count' [range: 3..7]."),
+                    checkboxInput(inputId = "ic_par_peakpicking_noise", label = "Peak Picking (noise)", value = TRUE) %>% bs_embed_tooltip(title = "Peak picking parameter: 'use noise cutoff' [TRUE/FALSE].")
+                  ),
+                )
               )
             )
           ),
@@ -267,27 +270,20 @@ app_server <- function(input, output, session) {
   # modify UI depending on workflow (IR-Delta or IDMS)
   observeEvent(input$ic_par_app_method, {
     shinyjs::toggleElement(id = "IDMS_par_section", condition = input$ic_par_app_method=="IDMS")
+    shinyjs::toggleElement(id = "Processing_par_section", condition = input$ic_par_app_method!="IDMS")
     if (input$ic_par_app_method=="IDMS") {
       updateCheckboxGroupInput(inputId = "ic_par_specplot", selected = c("overlay_pb", "overlay_mi"))
       disable(selector = "#ic_par_specplot input[value='overlay_si']")
       disable(selector = "#ic_par_specplot input[value='overlay_drift']")
       disable(selector = "#ic_par_specplot input[value='correct_drift']")
-      # shiny::hideTab(inputId = "ic_tabPanel_tables", target = "Peak table")
       shiny::hideTab(inputId = "ic_tabPanel_tables", target = "Ratio table")
       shiny::hideTab(inputId = "ic_tabPanel_tables", target = "Delta table")
-      # shinyjs::hide(id = "ic_plotarea_IR")
-      # shiny::showTab(inputId = "ic_tabPanel_tables", target = "IDMS")
-      # shinyjs::show(id = "ic_plotarea_IDMS")
     } else {
       enable(selector = "#ic_par_specplot input[value='overlay_si']")
       enable(selector = "#ic_par_specplot input[value='overlay_drift']")
       enable(selector = "#ic_par_specplot input[value='correct_drift']")
-      # shiny::showTab(inputId = "ic_tabPanel_tables", target = "Peak table")
       shiny::showTab(inputId = "ic_tabPanel_tables", target = "Ratio table")
       shiny::showTab(inputId = "ic_tabPanel_tables", target = "Delta table")
-      # shinyjs::show(id = "ic_plotarea_IR")
-      # shiny::hideTab(inputId = "ic_tabPanel_tables", target = "IDMS")
-      # shinyjs::hide(id = "ic_plotarea_IDMS")
     }
   })
   
@@ -355,8 +351,8 @@ app_server <- function(input, output, session) {
   MALDIquant_pre_process <- function(x) {
     hWS <- isolate(input$ic_par_halfWindowSize)
     if (input$ic_par_app_method=="IDMS") {
-      x_s <- MALDIquant::smoothIntensity(object = x, method = "SavitzkyGolay", halfWindowSize = 30)
-      x_bl <- lapply(x_s, function(y) { MALDIquant::estimateBaseline(object = y, method = "TopHat", halfWindowSize = 115) })
+      x_s <- MALDIquant::smoothIntensity(object = x, method = "SavitzkyGolay", halfWindowSize = 10)
+      x_bl <- lapply(x_s, function(y) { MALDIquant::estimateBaseline(object = y, method = "TopHat", halfWindowSize = 185) })
       x <- lapply(1:length(x), function(i) { 
         x[[i]]@intensity <- x[[i]]@intensity - x_bl[[i]][,"intensity"] 
         # set negative intensities to zero
@@ -382,7 +378,7 @@ app_server <- function(input, output, session) {
   MALDIquant_peaks <- function(x) {
     hWS <- isolate(input$ic_par_halfWindowSize)
     if (input$ic_par_app_method=="IDMS") {
-      x <- suppressWarnings(MALDIquant::smoothIntensity(x, method = "SavitzkyGolay", halfWindowSize = 100))
+      x <- suppressWarnings(MALDIquant::smoothIntensity(x, method = "SavitzkyGolay", halfWindowSize = input$ic_par_IDMS_halfWindowSize))
       out <- MALDIquant::detectPeaks(object = x, method = "MAD", SNR = 20)
     } else {
       if (hWS>0 && hWS<floor(length(x)/2)) {
@@ -396,8 +392,10 @@ app_server <- function(input, output, session) {
     if (input$ic_par_peakpicking_noise) {
       noise <- isolate(input$ic_par_peakpicking_SNR)*min(MALDIquant::estimateNoise(x)[,2], na.rm=TRUE)
     }
+    k <- ifelse(input$ic_par_app_method=="IDMS", 5, input$ic_par_peakpicking_k)
+    noise <- ifelse(input$ic_par_app_method=="IDMS", 0, noise)
     out@metaData[["pb"]] <- ldply(out@mass, function(p) { 
-      find_peak_boundaries(int = intensity(x), p = which.min(abs(mass(x) - p)), k = input$ic_par_peakpicking_k, min_scans = 5, noise = noise)
+      find_peak_boundaries(int = intensity(x), p = which.min(abs(mass(x) - p)), k = k, min_scans = 5, noise = noise)
     })
     return(out)
   }
@@ -528,7 +526,9 @@ app_server <- function(input, output, session) {
     #input$ic_par_halfWindowSize
     input$ic_par_baseline_method
     #input$ic_par_peakpicking_SNR
-    MALDIquant_pre_process(ic_mi_spectra_raw())
+    out <- try(MALDIquant_pre_process(ic_mi_spectra_raw()))
+    validate(need(!inherits(out, "try-error"), "Could not preprocess ic_mi_spectra_raw()"))
+    return(out)
   })
 
   # provide spectra based on processed raw data ----
@@ -763,15 +763,20 @@ app_server <- function(input, output, session) {
       cut_range$min <- spec_plots_xmin()
       cut_range$max <- spec_plots_xmax()
       updateActionButton(inputId = "ic_par_cut_range", label = "undo cut")
-      #style="background-color: #337ab7;"
       status_range_cut("on")
     } else {
       rng <- sapply(file_in(), function(x) { range(x[,input$ic_par_rt_col], na.rm=TRUE) })
       cut_range$min <- min(rng[1,])
       cut_range$max <- max(rng[2,])
       updateActionButton(inputId = "ic_par_cut_range", label = "cut range")
-      #style="background-color: #337ab7;"
       status_range_cut("off")
+    }
+  })
+  observeEvent(status_range_cut(), {
+    btn_col <- if (status_range_cut()=="on") {
+      shinyjs::runjs('document.getElementById("ic_par_cut_range").style.backgroundColor = "#FFA500";')
+    } else {
+      shinyjs::runjs('document.getElementById("ic_par_cut_range").style.backgroundColor = "#FFFFFF";')
     }
   })
   
@@ -783,13 +788,13 @@ app_server <- function(input, output, session) {
       }), 1, median)
       rt_shift(out)
       updateActionButton(inputId = "ic_par_align_rt", label = "undo align")
-      #tags$head(tags$style(HTML(".btn-default #ic_par_align_rt{background-color:#93b193}")))
+      shinyjs::runjs('document.getElementById("ic_par_align_rt").style.backgroundColor = "#FFA500";')
       status_align("on")
     } else {
       rt_shift(rep(0, length(file_in())))
       updateActionButton(inputId = "ic_par_align_rt", label = "align rt")
       status_align("off")
-      #tags$head(tags$style(HTML(".btn-default {background-color:#d45959}")))
+      shinyjs::runjs('document.getElementById("ic_par_align_rt").style.backgroundColor = "#FFFFFF";')
     }
   })
   
@@ -872,12 +877,6 @@ app_server <- function(input, output, session) {
       }
     )
   })
-  
-  # [ToDo] check if this observe can be deleted
-  observeEvent(input$ic_table_peaks_rows_selected, {
-    req(ic_table_peaks_edit())
-    i <- input$ic_table_peaks_rows_selected
-  }, ignoreNULL = FALSE)
   
   # opens a modal upon button click to enable the user to change the peak type
   shiny::observeEvent(input$ic_btn_peak_type, {
@@ -1139,6 +1138,8 @@ app_server <- function(input, output, session) {
   shiny::observeEvent(input$ic_help06, { help_the_user(filename = "06_peak_table") })
   shiny::observeEvent(input$ic_help07, { help_the_user(filename = "07_ratio_table") })
   shiny::observeEvent(input$ic_help08, { help_the_user(filename = "08_delta_table") })
+  shiny::observeEvent(input$ic_help09, { help_the_user(filename = "09_IDMS_table") })
+  shiny::observeEvent(input$ic_help10, { help_the_user(filename = "10_processing_params_IDMS") })
 
 }
 # ================================

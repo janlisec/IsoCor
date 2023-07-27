@@ -1,0 +1,16 @@
+bibentry(
+  bibtype  = "Article",
+  title    = "Data processing made easy: standalone tool for automated calculation of isotope ratio from transient signals – IsoCor",
+  author   = c(
+    person("Dariya", "Tukhmetova"),
+    person("Jan", "Lisec"),
+    person("Jochen", "Vogl"),
+    person("Björn", "Meermann")
+  ),
+  journal  = "J. Anal. At. Spectrom.",
+  year     = 2022,
+  volume   = 37,
+  number   = 11,
+  pages    = "2401-2409",
+  doi      = "10.1039/D2JA00208F"
+)
