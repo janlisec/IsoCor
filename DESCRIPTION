@@ -16,13 +16,10 @@ Description: Analyzing Inductively Coupled Plasma - Mass Spectrometry
     facilitates data processing of ICP-MS experiments to quickly obtain
     optimal processing parameters compared to traditional 'Excel'
     worksheet based approaches. A more detailed description can be found
-    in the corresponding article "Data processing made easy: standalone
-    tool for automated calculation of isotope ratio from transient signals
-    – IsoCor" by Tukhmetova et al. in Journal of Analytical Atomic
-    Spectrometry (JAAS). The most recent version of 'IsoCor' can be
-    tested online at <https://bam.de/isocor>.
+    in the corresponding article <https://doi.org/10.1039/D2JA00208F>. 
+    The most recent version of 'IsoCor' can be tested online at <https://bam.de/isocor>.
 License: GPL (>= 3)
-URL: https://doi.org/10.1039/D2JA00208F
+URL: https://git.bam.de/jlisec/isocor
 Depends: 
     R (>= 3.50)
 Imports: 
