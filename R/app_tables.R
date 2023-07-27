@@ -85,7 +85,7 @@ style_tab_peaks <- function(data, IDMS = FALSE, sh) {
       extend = "collection",
       text = '<i class="fa fa-question"></i>',
       titleAttr = 'Get Help on table',
-      action = DT::JS("function ( e, dt, node, config ) { Shiny.setInputValue('ic_help06', 1, {priority: 'event'}); }")
+      action = DT::JS(paste0("function ( e, dt, node, config ) { Shiny.setInputValue('ic_help0", ifelse(IDMS, 9, 6), "', 1, {priority: 'event'}); }"))
     )
   )
   if (IDMS) {

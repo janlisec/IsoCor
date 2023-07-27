@@ -1,45 +1,28 @@
-### Ratio table
+## Ratio table
 
-The ratio table contains isotope ratios and delta values calculated for each peak with three calculation methods applied to user-selected zones of the peak.
-
-- point by point (PBP)
-- linear regression slope (LRS)
-- peak area integration (PAI)  
+Ratio table contains isotope ratio and delta values calculated for each peak with three calculation methods (point by point PBP, linear regression slope LRS, peak area integration PAI) with user-selected zones of the peak.
 
 #### Explanation of the column names
 
-| <div style="width:200px">Column name</div> | Description |
-| :----------------- | :------------------------------------------------------------------------------------------ |
-| Sample             | ID of the sample, helpful when several files are uploaded                                   |
-| Isotopes           | ID of the detected peaks (number of peaks should be same when several files are uploaded)   |
-| BL method          | name of the selected baseline correction method                                             |
-| Ratio method       | name of the isotope ratio calculation method (PAI, PBP, or LRS)                             |
-| Zone [%]           | peak zone used for the isotope ratio calculation                                            |
-| Ratio P`n` `type`  | isotope ratio value of the peak. `n` and `type` specify peak ID and type, respectively      |
-| Points P`n` `type` | number of points corresponding to the peak. `n` and `type` as above                         |
-| Delta              | delta values calculated according to standard-sample bracketing method                      |
-|                    | (detailed explanation below)                  |
+-   *Sample*: ID of the sample, helpful when several files are uploaded\
+-   *Isotopes*: ID of the detected peaks (number of peaks should be same when several files are uploaded)\
+-   *BL method*: name of the selected baseline correction method\
+-   *Ratio method*: name of the isotope ratio calculation method (PAI, PBP, or LRS)\
+-   *Zone [%]*: peak zone used for the isotope ratio calculation\
+-   *Ratio P(n) (type)*: isotope ratio value of the peak. n is ID/index of the peak, Type - type of the peak (standard or sample)\
+-   *Points P(n) (type)*: number of points corresponding to the peak. n is ID/index of the peak, Type - type of the peak (standard or sample)\
+-   *Delta*: delta values calculated according to standard-sample bracketing method; when several standard peaks are measured, then IsoCor uses average value
 
 #### Explanation of the buttons located above the table
 
-| <div style="width:200px">Button name</div> | Description |
-| :---------------- | :--------------------------------------------------------------- |
-| Copy              | to copy the entire table                                         |
-| Excel             | to save the table as Excel file                                  |
-| add new zone      | specify an additional zone value for isotope ratio calculation   |
-|                   | (default zone values are 100%, 95%, 90% and 80%)                 |
-| rem selected zone | remove a previously selected zone                                |
-| set coef          | enter coefficient for delta scaling (detailed explanation below) |
-| Help              | get help                                                         |
-
+-   *Copy*: to copy the entire table\
+-   *Excel*: to save the table as Excel file\
+-   *add new zone*: select zone of the peak for isotope ratio calculation; by default IsoCor calculated isotope ratio with 100%, 95%, 90% and 80% zones to ease comparison and selection of the optimal zone\
+-   *rem selected zone*: remove previously selected zone\
+-   *set coef*: enter coefficient for delta scaling, find detailed explanation below
 
 #### Explanation of the delta scaling
 
-***IsoCor*** gives possibility to perform delta scaling using scaling coefficient $f_{coef}$ in the equation below. 
-The $f_{coef}$ value is added manually by the user after clicking the `set coef` button.   
+IsoCor gives possibility to perform delta scaling. *coef* in the formula below is a scaling coefficient. This is helpful when delta should be scaled according to the standard.
 
-$$\delta^{i/j}_{smp/std} = \left( {R^{i/j}_{smp} \over R^{i/j}_{work.std}} \right) \times f_{coef} - 1 ~~ \text{where:} ~~ f_{coef} = {1 \over \delta^{i/j}_{std/work.std} + 1 }  $$
-
-Delta scaling is used when samples are measured against working standard, and the working standard is measured against reference material. 
-Thus, when reporting delta values of the samples, conversion of sample delta against reference material is performed using above equation. 
-If no scaling is needed, then $f_{coef}$ is set to 1 (default value).
+![](images/07_ratio_table_01.png)

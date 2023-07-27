@@ -1,13 +1,25 @@
 ## General
 
-The ***IsoCor*** application (App) processes data according to the following workflow:
+#### The IsoCor application (App) performs calculation in two modes using transient signals:
 
-![IsoCor workflow](images/01_general_01.png)
+(1) calculation of isotope ratio and delta, denoted as IR-Delta;
 
-The application interface is divided into three main parts
+(2) calculation of mass flow for post-column isotope dilution quantification, denoted as IDMS.
 
-![App interface](images/01_general_02.png)
+The data processing workflow of each mode is done according to the schemes below:
 
-part A: includes options for Data upload, Column selection and Processing   
-part B: includes visualization options    
+1)  calculation of isotope ratio and delta (IR-Delta)
+
+![](images/01_general_01.png)
+
+2)  calculation of mass flow (IDMS)
+
+![](images/01_general_03.png)
+
+#### The application interface is divided into three main parts
+
+![](images/01_general_02.png)
+
+part A: includes options for Data upload, Column selection and Processing\
+part B: includes visualization options\
 part C: includes output tables

@@ -1,0 +1,30 @@
+### IDMS parameters
+
+#### Processing parameters
+
+*Smoothing* parameter uses Savitzky-Golay method to smooth out the small intensity fluctuations within the peak to help the algorithm to find peak boundaries correctly. The *Smoothing* parameter can be adjusted to the optimal value by the user.
+
+#### Mass bias correction related parameters
+
+*IDMS f_value* is used for calculating mass bias correction factor K in the equation $IR_{corrected}=IR_{measured}*K$, where $IR=\frac{Intensity(MI)}{Intensity(SI)}$. The dropdown menu for the *Mass bias method* selection includes Linear law, Exponential law, Russel's law or none. *IDMS f_value* should be inserted manually by the user according to the methods shown below:\
+Linear equation: $K_{SI/MI}=1+f(amu_{SI}-amu_{MI})$
+
+Russel's equation: $K_{SI/MI}=(amu_{SI}/amu_{MI})^f$
+
+Exponential equation: $K_{SI/MI}=e^{f*(amu_{SI}-amu_{MI})}$
+
+#### Sample related parameters:
+
+-   *Abund.MI* and *Abund.SI* are abundance of main isotope (MI) and secondary isotope (SI), respectively, in the sample;\
+-   *Inj.amount* is an injection amount\
+
+#### Spike related parameters:
+
+-   *MF* is the mass flow of the spike;\
+-   *Abund.MI* and *Abund.SI* are abundance of MI and SI, respectively, in the spike;\
+
+***Note!***\
+- The detailed explanation of the MF equation can be found by pressing the Help button on the IDMS table tab.\
+- *Baseline correction* and *Peak picking*, are set at optimal values for the data (measurement of Sulfur species with CE/ICP-MS method) used during the development of the IDMS functionality of the app. *Baseline correction* is based on TopHat method that is implemented using <a href="https://academic.oup.com/bioinformatics/article/28/17/2270/246552/" target="_blank" rel="noopener noreferrer">MALDIquant package</a>. *Peak picking* SNR (signal-to-noise) parameter helps to improve finding peak boundaries and to ignore small peaks of no interest. When using the IDMS mode of the app with different data, the user should verify applicability of the default *Baseline correction* and *Peak picking* parameters for their processing. For more details, the user may contact authors of the IsoCor at dariya.tukhmetova[at]bam.de or jan.lisec[at]bam.de\
+- The smoothing is only used during baseline correction and peak detection steps. For the peak integration of the MF non-smoothed intensities are used.\
+- The Output tables and Plot are automatically updated when new parameter is inserted.

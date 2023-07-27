@@ -1,0 +1,43 @@
+### IDMS table
+
+The table includes the following information:\
+- *Sample*: ID of the sample; each file is indexed when several files are uploaded\
+- *Peak ID*: ID of the detected peaks (when several files are uploaded, the files should contain same number of peaks); each detected peak is indexed numerically\
+- *RT max*: retention time of the peak at maximum intensity\
+- *RT start*: retention time at the start of the peak\
+- *RT end*: retention time at the end of the peak\
+- *Scan start*: index of the row corresponding to the start of the peak\
+- *Scan end*: index of the row corresponding to the end of the peak\
+- *Scan length*: number of points corresponding to the peak elution from start to the end\
+- *Mass bias method*: Name of the method when mass bias correction is applied; default name "none"\
+- *f_value*: a coefficient for mass bias correction; the coefficient should be calculated separately and copy/pasted into IsoCor; find detailed explanation below\
+- *k*: mass bias correction factor calculated by the IsoCor; find detailed explanation below\
+- *Abs_q* is absolute quantity of the element found by integration of the corresponding peak\
+- *Conc* is concentration of the element found using injection volume.
+
+#### Explanation of the buttons located above the table:
+
+-   *CSV*: to save table in CSV format
+-   *Excel*: to save the table as Excel file
+
+#### Mass flow (MF) calculation formula:
+
+$MF_{sample}=MF_{spike}*\frac{(Abund.MI_{spike}-IR*K*Abund.SI_{spike})}{(IR*K*Abund.SI_{sample}-Abund.MI_{sample})}-MF_{blank}$
+
+#### Quantification formula:
+
+$C=\frac{\sum (MF_{peak}*\Delta t)}{V_{inj}}$
+
+#### Explanation of the formula parameters:
+
+The parameters that are calculated by the app:\
+$MF_{sample}$ is mass flow of the sample;\
+$IR$ is isotope ratio calculated according to $IR=\frac{Intensity(MI)}{Intensity(SI)}$, where MI is a main isotope, SI is a secondary isotope;\
+$K$ is mass bias correction factor in the $IR_{corrected}=IR_{measured}*K$; the K can be calculated using one of three mass bias calculation methods selected by the user from the dropdown menu;\
+$MF_{blank}$ is mass flow of the blank. The blank is estimated by the app and subtracted from the raw MF to obtain baseline corrected MF;
+
+The parameters that are inserted manually by the user:\
+$MF_{spike}$ is mass flow of the spike;\
+$Abund.MI_{spike}$ and $Abund.SI_{spike}$ are abundance of MI and SI, respectively, in the spike;\
+$Abund.MI_{sample}$ and $Abund.SI_{sample}$ are abundance of MI and SI, respectively, in the sample;\
+$V_{inj}$ is an injection volume\
