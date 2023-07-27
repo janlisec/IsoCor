@@ -298,12 +298,13 @@ app_server <- function(input, output, session) {
     validate(need(input$ic_par_app_method=="IDMS", "Method IDMS not selected"))
     idms <- file_in()
     # R_observe/R_true
-    f_value <- log(x = input$ic_par_IDMS_f, base = input$ic_par_mi_amu/input$ic_par_si_amu)
+    #f_value <- log(x = input$ic_par_IDMS_f, base = input$ic_par_mi_amu/input$ic_par_si_amu)
     k <- IsoCor::mass_bias(
       mi_amu = input$ic_par_mi_amu, 
       si_amu = input$ic_par_si_amu, 
       method = current_mb_method(), 
-      f_value = f_value
+      #f_value = f_value
+      f_value = input$ic_par_IDMS_f
     )
     coef <- input$ic_par_MF_Spike * (input$ic_par_mi_amu / input$ic_par_si_amu) * (input$ic_par_Abund_SI / input$ic_par_Abund_MI)
     validate(need(is.finite(coef), "Can not compute valid coef with these parameters. Check 'MI amu' and 'SI amu'"))
@@ -327,7 +328,8 @@ app_server <- function(input, output, session) {
     pks <- try(lapply(spc, MALDIquant_peaks), silent = TRUE)
     validate(need(!(inherits(pks, "try-error")), "Can't obtain peaks from IDMS spectra"))
     out <- prep_tab_peaks(p = pks, s = spc, mb = current_mb_method())
-    f_value <- log(x = input$ic_par_IDMS_f, base = input$ic_par_mi_amu/input$ic_par_si_amu)
+    #f_value <- log(x = input$ic_par_IDMS_f, base = input$ic_par_mi_amu/input$ic_par_si_amu)
+    f_value <- input$ic_par_IDMS_f
     validate(need(is.finite(f_value), "Can't calculate a finite f_value for IDMS peaks"))
     out[,"f_value"] <- f_value
     out[,"k"] <- IsoCor::mass_bias(mi_amu = input$ic_par_mi_amu, si_amu = input$ic_par_si_amu, method = current_mb_method(), f_value = f_value)

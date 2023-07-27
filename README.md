@@ -14,6 +14,7 @@ You can install the development version of `IsoCor` from
 ``` r
 # install.packages("devtools")
 devtools::install_github("janlisec/IsoCor")
+install.packages("IsoCor")
 ```
 
 ## Example

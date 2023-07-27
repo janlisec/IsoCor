@@ -7,11 +7,11 @@
 #### Mass bias correction related parameters
 
 *IDMS f_value* is used for calculating mass bias correction factor K in the equation $IR_{corrected}=IR_{measured}*K$, where $IR=\frac{Intensity(MI)}{Intensity(SI)}$. The dropdown menu for the *Mass bias method* selection includes Linear law, Exponential law, Russel's law or none. *IDMS f_value* should be inserted manually by the user according to the methods shown below:\
-Linear equation: $K_{SI/MI}=1+f(amu_{SI}-amu_{MI})$
+Linear equation: $K_{MI/SI}=1+f(amu_{SI}-amu_{MI})$
 
-Russel's equation: $K_{SI/MI}=(amu_{SI}/amu_{MI})^f$
+Russel's equation: $K_{MI/SI}=(amu_{SI}/amu_{MI})^f$
 
-Exponential equation: $K_{SI/MI}=e^{f*(amu_{SI}-amu_{MI})}$
+Exponential equation: $K_{MI/SI}=e^{f*(amu_{SI}-amu_{MI})}$
 
 #### Sample related parameters:
 
