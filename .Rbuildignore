@@ -11,3 +11,4 @@ global.R
 dev/.*[.]R$
 dev
 .gitlab
+^\.github$
