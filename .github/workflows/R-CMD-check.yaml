@@ -40,9 +40,12 @@ jobs:
           use-public-rspm: true
 
       - name: Install libcurl
-        run: >
-          sudo apt-get update && sudo apt-get install --yes
-          libcurl4-openssl-dev
+        if: runner.os == 'Linux' 
+        run: |
+            sudo apt-get install --yes libcurl4-openssl-dev
+            ## Workaround: 'curl' from RSPM fails to load; install from CRAN
+            Rscript -e "install.packages('curl', repos='https://cloud.r-project.org')"
+            Rscript -e "install.packages('covr')"
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
