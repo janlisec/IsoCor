@@ -190,20 +190,20 @@ app_ui <- function() {
             id="ic_tabPanel_tables",
             # tabPanel(
             #   title = "IDMS", p(""),
-            #   DTOutput("ic_table_IDMS")
+            #   DT::DTOutput("ic_table_IDMS")
             # ),
             tabPanel(
               title = "Peak table", p(""),
-              DTOutput("ic_table_peaks")
+              DT::DTOutput("ic_table_peaks")
             ),
             tabPanel(
               title = "Ratio table", p(""),
-              DTOutput("ic_table_ratios")
+              DT::DTOutput("ic_table_ratios")
             ),
             tabPanel(
               title = "Delta table", p(""),
               fluidRow(
-                column(width = 8, DTOutput("ic_table_deltas")),
+                column(width = 8, DT::DTOutput("ic_table_deltas")),
                 column(width = 4, plotOutput(outputId = "ic_deltaplot2", height = "400px"))
               )
             )
@@ -242,7 +242,7 @@ app_server <- function(input, output, session) {
   output$ic_par_path_expfiles <- renderUI({
     # file input as renderUI to allow a reset in case that the upload method is changed
     message("output$ic_par_path_expfiles")
-    fileInput(inputId = "ic_par_path_expfiles", label = "Select Files", multiple = TRUE)
+    fileInput(inputId = "ic_par_path_expfiles_inner", label = "Select Files", multiple = TRUE)
   })
   
   ### setup reactive Values ##############################################----
@@ -265,6 +265,10 @@ app_server <- function(input, output, session) {
   current_coef <- reactiveVal(1)
   # initial drift_filter
   current_drift_filter <- reactiveVal(c(0.1,0.9))
+  # initial mass bias method
+  current_mb_method <- reactiveVal("none")
+  # return current screen height to adjust table height
+  screen_height <- reactiveVal(960)
   
   ### show/hide section ##################################################----
   # modify UI depending on workflow (IR-Delta or IDMS)
@@ -287,71 +291,12 @@ app_server <- function(input, output, session) {
     }
   })
   
-  # test section IDMS ----
-  
-  observeEvent(input$ic_par_IDMS_mb_method, {
-    current_mb_method(input$ic_par_IDMS_mb_method)
-  }, ignoreInit = FALSE) 
-  
-  IDMS_data <- reactive({
-    req(file_in(), input$ic_par_IDMS_f, input$ic_par_IR_sample, input$ic_par_Abund_MI, input$ic_par_Inj_Amount, input$ic_par_IR_spike, input$ic_par_Abund_SI, input$ic_par_MF_Spike, input$ic_par_mi_amu, input$ic_par_si_amu)
-    validate(need(input$ic_par_app_method=="IDMS", "Method IDMS not selected"))
-    idms <- file_in()
-    # R_observe/R_true
-    #f_value <- log(x = input$ic_par_IDMS_f, base = input$ic_par_mi_amu/input$ic_par_si_amu)
-    k <- IsoCor::mass_bias(
-      mi_amu = input$ic_par_mi_amu, 
-      si_amu = input$ic_par_si_amu, 
-      method = current_mb_method(), 
-      #f_value = f_value
-      f_value = input$ic_par_IDMS_f
-    )
-    coef <- input$ic_par_MF_Spike * (input$ic_par_mi_amu / input$ic_par_si_amu) * (input$ic_par_Abund_SI / input$ic_par_Abund_MI)
-    validate(need(is.finite(coef), "Can not compute valid coef with these parameters. Check 'MI amu' and 'SI amu'"))
-    idms <- lapply(idms, function(x) { 
-      x$IR<- x[,input$ic_par_mi_col]/x[,input$ic_par_si_col]
-      x$IR_cor <- x$IR * k
-      # previous version of Dariya (from 03/2023)
-      #x$MF <- coef * (x$IR_cor - input$ic_par_IR_spike) / (1 - x$IR_cor * input$ic_par_IR_sample)
-      # Dariya's version from 06/2023
-      x$MF <- input$ic_par_MF_Spike * (input$ic_par_IR_spike - x$IR_cor * input$ic_par_Abund_SI) / (input$ic_par_IR_sample * x$IR_cor - input$ic_par_Abund_MI)
-      return(x)
-    })
-    return(idms)
-  })
-  
-  ic_table_idms_pre <- reactive({
-    req(ic_mi_spectra())
-    # input$ic_par_halfWindowSize
-    # input$ic_par_peakpicking_SNR
-    spc <- ic_mi_spectra()
-    pks <- try(lapply(spc, MALDIquant_peaks), silent = TRUE)
-    validate(need(!(inherits(pks, "try-error")), "Can't obtain peaks from IDMS spectra"))
-    out <- prep_tab_peaks(p = pks, s = spc, mb = current_mb_method())
-    #f_value <- log(x = input$ic_par_IDMS_f, base = input$ic_par_mi_amu/input$ic_par_si_amu)
-    f_value <- input$ic_par_IDMS_f
-    validate(need(is.finite(f_value), "Can't calculate a finite f_value for IDMS peaks"))
-    out[,"f_value"] <- f_value
-    out[,"k"] <- IsoCor::mass_bias(mi_amu = input$ic_par_mi_amu, si_amu = input$ic_par_si_amu, method = current_mb_method(), f_value = f_value)
-    idms <- lapply(1:length(spc), function(i) {
-      data.frame("MF_dt" = spc[[i]]@intensity * c(diff(spc[[i]]@mass), 0))
-    })
-    out$Abs_q <- sapply(1:nrow(out), function(i) {
-      sum(idms[[out[i,"Sample"]]][out[i,"Scan start"]:out[i,"Scan end"],"MF_dt"], na.rm=TRUE)
-    })
-    out$Conc <- out$Abs_q / input$ic_par_Inj_Amount
-    out$f_value <- round(out$f_value, 6)
-    out$Abs_q <- round(out$Abs_q, 3)
-    out$Conc <- round(out$Conc, 3)
-    return(out)
-  })
-  
-
   
   ### internal functions #################################################----
   # define the (pre) processing steps in a functions
   MALDIquant_pre_process <- function(x) {
     hWS <- isolate(input$ic_par_halfWindowSize)
+    if (!all(sapply(x, inherits, "MassSpectrum"))) browser()
     if (input$ic_par_app_method=="IDMS") {
       x_s <- MALDIquant::smoothIntensity(object = x, method = "SavitzkyGolay", halfWindowSize = 10)
       x_bl <- lapply(x_s, function(y) { MALDIquant::estimateBaseline(object = y, method = "TopHat", halfWindowSize = 185) })
@@ -365,11 +310,9 @@ app_server <- function(input, output, session) {
     } else {
       if (isolate(input$ic_par_baseline_method)!="none") {
         if (input$ic_par_baseline_method=="Dariyah") {
+          # $$not implemented
         } else {
-          x <- removeBaseline(
-            object = x, 
-            method = isolate(input$ic_par_baseline_method)
-          )
+          x <- MALDIquant::removeBaseline(object = x, method = isolate(input$ic_par_baseline_method))
         }
       } 
     }
@@ -384,11 +327,11 @@ app_server <- function(input, output, session) {
       out <- MALDIquant::detectPeaks(object = x, method = "MAD", SNR = 20)
     } else {
       if (hWS>0 && hWS<floor(length(x)/2)) {
-        x <- smoothIntensity(object = x, method = "MovingAverage", halfWindowSize = hWS)
+        x <- MALDIquant::smoothIntensity(object = x, method = "MovingAverage", halfWindowSize = hWS)
       }
       # set a minimum hWS to detect peaks
       hWS <- ifelse(hWS>0, hWS, 25)
-      out <- detectPeaks(object = x, method = "MAD", halfWindowSize = hWS, SNR = isolate(input$ic_par_peakpicking_SNR))
+      out <- MALDIquant::detectPeaks(object = x, method = "MAD", halfWindowSize = hWS, SNR = isolate(input$ic_par_peakpicking_SNR))
     }
     noise <- 0
     if (input$ic_par_peakpicking_noise) {
@@ -397,26 +340,26 @@ app_server <- function(input, output, session) {
     k <- ifelse(input$ic_par_app_method=="IDMS", 5, input$ic_par_peakpicking_k)
     noise <- ifelse(input$ic_par_app_method=="IDMS", 0, noise)
     out@metaData[["pb"]] <- ldply(out@mass, function(p) { 
-      find_peak_boundaries(int = intensity(x), p = which.min(abs(mass(x) - p)), k = k, min_scans = 5, noise = noise)
+      find_peak_boundaries(int = MALDIquant::intensity(x), p = which.min(abs(MALDIquant::mass(x) - p)), k = k, min_scans = 5, noise = noise)
     })
     return(out)
   }
   
-  ### reactives ################################################################
+  ### reactives ########################################################### ----
   # get input data as list of tables
   file_in <- reactive({
     req(input$ic_par_libsource)
     message("file_in")
     out <- NULL
     if (input$ic_par_libsource=="upload files") {
-      if (!is.null(input$ic_par_path_expfiles)) {
-        out <- try(lapply(input$ic_par_path_expfiles$datapath, function(x) {
+      if (!is.null(input$ic_par_path_expfiles_inner)) {
+        out <- try(lapply(input$ic_par_path_expfiles_inner$datapath, function(x) {
           read_raw_data(path=x, format=input$ic_par_inputformat)
         }))
         if (inherits(x = out, what = "try-error")) {
           out <- NULL
         } else {
-          names(out) <- input$ic_par_path_expfiles$name
+          names(out) <- input$ic_par_path_expfiles_inner$name
         }
       } else {
         out <- NULL
@@ -450,6 +393,11 @@ app_server <- function(input, output, session) {
     return(out)
   })
   
+  # register the file_in reactive for app testing
+  shiny::exportTestValues(
+    file_in = file_in
+  )
+  
   observeEvent(input$ic_par_specplot, {
     toggle(id = "ic_par_focus_sample", condition = !("overlay_mi" %in% input$ic_par_specplot))
   }, ignoreNULL = FALSE)
@@ -463,6 +411,36 @@ app_server <- function(input, output, session) {
     validate(need(length(unique(headers))==1, message = "Files contain different headers"))
     return(colnames(file_in()[[1]]))
   })
+  
+  # IDMS reactive objects ----
+  
+  IDMS_data <- reactive({
+    req(file_in(), input$ic_par_IDMS_f, input$ic_par_IR_sample, input$ic_par_Abund_MI, input$ic_par_Inj_Amount, input$ic_par_IR_spike, input$ic_par_Abund_SI, input$ic_par_MF_Spike, input$ic_par_mi_amu, input$ic_par_si_amu)
+    validate(need(input$ic_par_app_method=="IDMS", "Method IDMS not selected"))
+    idms <- file_in()
+    # R_observe/R_true
+    #f_value <- log(x = input$ic_par_IDMS_f, base = input$ic_par_mi_amu/input$ic_par_si_amu)
+    k <- IsoCor::mass_bias(
+      mi_amu = input$ic_par_mi_amu, 
+      si_amu = input$ic_par_si_amu, 
+      method = current_mb_method(), 
+      #f_value = f_value
+      f_value = input$ic_par_IDMS_f
+    )
+    coef <- input$ic_par_MF_Spike * (input$ic_par_mi_amu / input$ic_par_si_amu) * (input$ic_par_Abund_SI / input$ic_par_Abund_MI)
+    validate(need(is.finite(coef), "Can not compute valid coef with these parameters. Check 'MI amu' and 'SI amu'"))
+    idms <- lapply(idms, function(x) { 
+      x$IR<- x[,input$ic_par_mi_col]/x[,input$ic_par_si_col]
+      x$IR_cor <- x$IR * k
+      # previous version of Dariya (from 03/2023)
+      #x$MF <- coef * (x$IR_cor - input$ic_par_IR_spike) / (1 - x$IR_cor * input$ic_par_IR_sample)
+      # Dariya's version from 06/2023
+      x$MF <- input$ic_par_MF_Spike * (input$ic_par_IR_spike - x$IR_cor * input$ic_par_Abund_SI) / (input$ic_par_IR_sample * x$IR_cor - input$ic_par_Abund_MI)
+      return(x)
+    })
+    return(idms)
+  })
+  
   
   # convert input tables into MALDIquant spectra format for selected MI trace and RT column ----
   ic_mi_spectra_raw <- reactive({
@@ -535,7 +513,7 @@ app_server <- function(input, output, session) {
 
   # provide spectra based on processed raw data ----
   ic_si_spectra <- reactive({
-    req(ic_si_spectra_raw())
+    req(ic_si_spectra_raw(), input$ic_par_baseline_method)
     message("ic_si_spectra")
     #input$ic_par_halfWindowSize
     input$ic_par_baseline_method
@@ -551,7 +529,34 @@ app_server <- function(input, output, session) {
     lapply(ic_mi_spectra(), MALDIquant_peaks)
   })
   
-  # mi peak table ----
+  # IDMS table ----
+  ic_table_idms_pre <- reactive({
+    req(ic_mi_spectra())
+    # input$ic_par_halfWindowSize
+    # input$ic_par_peakpicking_SNR
+    spc <- ic_mi_spectra()
+    pks <- try(lapply(spc, MALDIquant_peaks), silent = TRUE)
+    validate(need(!(inherits(pks, "try-error")), "Can't obtain peaks from IDMS spectra"))
+    out <- prep_tab_peaks(p = pks, s = spc, mb = current_mb_method())
+    #f_value <- log(x = input$ic_par_IDMS_f, base = input$ic_par_mi_amu/input$ic_par_si_amu)
+    f_value <- input$ic_par_IDMS_f
+    validate(need(is.finite(f_value), "Can't calculate a finite f_value for IDMS peaks"))
+    out[,"f_value"] <- f_value
+    out[,"k"] <- IsoCor::mass_bias(mi_amu = input$ic_par_mi_amu, si_amu = input$ic_par_si_amu, method = current_mb_method(), f_value = f_value)
+    idms <- lapply(1:length(spc), function(i) {
+      data.frame("MF_dt" = spc[[i]]@intensity * c(diff(spc[[i]]@mass), 0))
+    })
+    out$Abs_q <- sapply(1:nrow(out), function(i) {
+      sum(idms[[out[i,"Sample"]]][out[i,"Scan start"]:out[i,"Scan end"],"MF_dt"], na.rm=TRUE)
+    })
+    out$Conc <- out$Abs_q / input$ic_par_Inj_Amount
+    out$f_value <- round(out$f_value, 6)
+    out$Abs_q <- round(out$Abs_q, 3)
+    out$Conc <- round(out$Conc, 3)
+    return(out)
+  })
+  
+    # mi peak table ----
   ic_table_peaks_pre <- reactive({
     req(ic_mi_peaks())
     message("ic_table_peaks_pre")
@@ -581,9 +586,16 @@ app_server <- function(input, output, session) {
     )
   })
   
+  
+  # IDMS observer
+  observeEvent(input$ic_par_IDMS_mb_method, {
+    current_mb_method(input$ic_par_IDMS_mb_method)
+  }, ignoreInit = FALSE) 
+  
+  
   # add or remove zone levels ----
   observeEvent(input$ic_btn_add_zone, {
-    shinyalert(
+    shinyalert::shinyalert(
       html = TRUE,
       text = tagList(
         helpText("Current values:", paste(100*zones(), collapse=", ")),
@@ -605,7 +617,7 @@ app_server <- function(input, output, session) {
   observeEvent(input$ic_btn_rem_zone, {
     selected <- NULL
     if (!is.null(input$ic_table_ratios_rows_selected)) selected <- ic_table_ratios_pre()[input$ic_table_ratios_rows_selected,"Zone [%]"]
-    shinyalert(
+    shinyalert::shinyalert(
       html = TRUE,
       text = tagList(
         div(
@@ -628,7 +640,7 @@ app_server <- function(input, output, session) {
   
   # set coef ----
   observeEvent(input$ic_btn_set_coef, {
-    shinyalert(
+    shinyalert::shinyalert(
       html = TRUE,
       text = tagList(
         numericInput(inputId = "ic_par_coef", label = "Add 'coef' to normalize delta", value = current_coef(), min=0.9, max=1.1, step=0.0001) %>% bs_embed_tooltip(title = "Define coef parameter for delta calculation.")
@@ -691,7 +703,7 @@ app_server <- function(input, output, session) {
   # change plot range upon user mouse interaction (double click) ----
   observeEvent(input$ic_specplot_dblclick, {
     req(ic_mi_spectra())
-    rng <- range(sapply(ic_mi_spectra(), function(x) { range(mass(x), na.rm=TRUE) }))
+    rng <- range(sapply(ic_mi_spectra(), function(x) { range(MALDIquant::mass(x), na.rm=TRUE) }))
     spec_plots_xmin(rng[1])
     spec_plots_xmax(rng[2])
   })
@@ -802,7 +814,7 @@ app_server <- function(input, output, session) {
   
   # open a modal to allow the user to specify quantiles for drift filtering
   observeEvent(input$ic_par_set_drift, {
-    shinyalert(
+    shinyalert::shinyalert(
       html = TRUE,
       text = tagList(
         fluidRow(
@@ -823,16 +835,15 @@ app_server <- function(input, output, session) {
   })
 
   # peak table output and associated action buttons ----
-  output$ic_table_peaks <- renderDT({
+  output$ic_table_peaks <- DT::renderDT({
     req(ic_table_peaks_edit())
     message("output$ic_table_peaks")
     style_tab_peaks(data = ic_table_peaks_edit(), IDMS = input$ic_par_app_method=="IDMS", sh = screen_height())
   })
   
   # apply mass bias correction using table action button
-  current_mb_method <- reactiveVal("none")
   shiny::observeEvent(input$ic_btn_mass_bias, {
-    shinyalert(
+    shinyalert::shinyalert(
       html = TRUE,
       text = tagList(
         fluidRow(
@@ -883,13 +894,13 @@ app_server <- function(input, output, session) {
   # opens a modal upon button click to enable the user to change the peak type
   shiny::observeEvent(input$ic_btn_peak_type, {
     if (is.null(input$ic_table_peaks_rows_selected)) {
-      shinyalert(text = "Please select a table row first", type = "info")
+      shinyalert::shinyalert(text = "Please select a table row first", type = "info")
     } else {
       if (!("Type" %in% colnames(ic_table_peaks_edit()))) {
-        shinyalert(text = "Peak types can only be assigned once a similar number of peaks are found in all sampels", type = "info")
+        shinyalert::shinyalert(text = "Peak types can only be assigned once a similar number of peaks are found in all sampels", type = "info")
       } else {
         i <- input$ic_table_peaks_rows_selected
-        shinyalert(
+        shinyalert::shinyalert(
           html = TRUE,
           text = tagList(
             shiny::selectInput(
@@ -968,7 +979,6 @@ app_server <- function(input, output, session) {
   })
   
   # adjust UI to current device height in pixel
-  screen_height <- reactiveVal(960)
   observe({
     invalidateLater(3000)
     if (!identical(input$CurrentScreenHeight, screen_height())) {
@@ -977,7 +987,7 @@ app_server <- function(input, output, session) {
   })
   
   # ratio(s) table ----
-  output$ic_table_ratios <- renderDT({
+  output$ic_table_ratios <- DT::renderDT({
     message("output$ic_table_ratios")
     dt <- DT::datatable(
       data = ic_table_ratios_pre(),
@@ -1048,7 +1058,7 @@ app_server <- function(input, output, session) {
   })
   
   # delta table ----
-  output$ic_table_deltas <- renderDT({
+  output$ic_table_deltas <- DT::renderDT({
     message("output$ic_table_deltas")
     dt <- DT::datatable(
       data = ic_table_deltas_pre(),
@@ -1094,7 +1104,7 @@ app_server <- function(input, output, session) {
   })  
   
   # spectrum plot ----
-  output$ic_specplot <- renderPlot({
+  output$ic_specplot <- shiny::renderPlot({
     req(file_in(), ic_mi_spectra(), ic_si_spectra(), input$ic_par_si_col_name, input$ic_par_mi_col_name, ic_table_peaks_edit())
     message("output$ic_specplot")
     chk <- input$ic_par_app_method=="IDMS"

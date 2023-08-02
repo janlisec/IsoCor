@@ -1,0 +1,523 @@
+{
+  "input": {
+    "CurrentScreenHeight": 1323,
+    "ic_help01": 0,
+    "ic_help02": 0,
+    "ic_help03": 0,
+    "ic_help04": 0,
+    "ic_help05": 0,
+    "ic_help10": 0,
+    "ic_par_Abund_MI": 0.9499,
+    "ic_par_Abund_SI": 0.998,
+    "ic_par_IDMS_f": 0.8876311,
+    "ic_par_IDMS_halfWindowSize": 100,
+    "ic_par_IDMS_mb_method": "Russel",
+    "ic_par_IR_sample": 0.0425,
+    "ic_par_IR_spike": 0.002,
+    "ic_par_Inj_Amount": 0.0205,
+    "ic_par_MF_Spike": 4.78881,
+    "ic_par_align_rt": 0,
+    "ic_par_app_method": "IDMS",
+    "ic_par_baseline_method": "SNIP",
+    "ic_par_cut_range": 0,
+    "ic_par_focus_sample": "Sample 1",
+    "ic_par_halfWindowSize": 25,
+    "ic_par_inputformat": "generic",
+    "ic_par_libsource": "testdata_IDMS",
+    "ic_par_mi_amu": 31.97207073,
+    "ic_par_mi_col": "32S_MR",
+    "ic_par_mi_col_name": "32S_MR",
+    "ic_par_mi_rt_unit": "min",
+    "ic_par_path_expfiles_inner": null,
+    "ic_par_peakpicking_SNR": 25,
+    "ic_par_peakpicking_k": 3,
+    "ic_par_peakpicking_noise": true,
+    "ic_par_rt_col": "Minutes",
+    "ic_par_set_drift": 0,
+    "ic_par_si_amu": 33.96786687,
+    "ic_par_si_col": "34S_MR",
+    "ic_par_si_col_name": "34S_MR",
+    "ic_par_specplot": [
+      "overlay_mi",
+      "overlay_pb"
+    ],
+    "ic_specplot_dblclick": null,
+    "ic_tabPanel_tables": "Peak table",
+    "ic_table_peaks_cell_clicked": {
+
+    },
+    "ic_table_peaks_cells_selected": [
+
+    ],
+    "ic_table_peaks_columns_selected": null,
+    "ic_table_peaks_rows_all": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "ic_table_peaks_rows_current": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "ic_table_peaks_rows_selected": null,
+    "ic_table_peaks_search": "",
+    "ic_table_peaks_state": {
+      "start": 0,
+      "length": -1,
+      "order": [
+
+      ],
+      "search": {
+        "search": "",
+        "smart": true,
+        "regex": false,
+        "caseInsensitive": true
+      },
+      "columns": [
+        {
+          "visible": true,
+          "search": {
+            "search": "",
+            "smart": true,
+            "regex": false,
+            "caseInsensitive": true
+          }
+        },
+        {
+          "visible": true,
+          "search": {
+            "search": "",
+            "smart": true,
+            "regex": false,
+            "caseInsensitive": true
+          }
+        },
+        {
+          "visible": true,
+          "search": {
+            "search": "",
+            "smart": true,
+            "regex": false,
+            "caseInsensitive": true
+          }
+        },
+        {
+          "visible": true,
+          "search": {
+            "search": "",
+            "smart": true,
+            "regex": false,
+            "caseInsensitive": true
+          }
+        },
+        {
+          "visible": true,
+          "search": {
+            "search": "",
+            "smart": true,
+            "regex": false,
+            "caseInsensitive": true
+          }
+        },
+        {
+          "visible": true,
+          "search": {
+            "search": "",
+            "smart": true,
+            "regex": false,
+            "caseInsensitive": true
+          }
+        },
+        {
+          "visible": true,
+          "search": {
+            "search": "",
+            "smart": true,
+            "regex": false,
+            "caseInsensitive": true
+          }
+        },
+        {
+          "visible": true,
+          "search": {
+            "search": "",
+            "smart": true,
+            "regex": false,
+            "caseInsensitive": true
+          }
+        },
+        {
+          "visible": true,
+          "search": {
+            "search": "",
+            "smart": true,
+            "regex": false,
+            "caseInsensitive": true
+          }
+        },
+        {
+          "visible": true,
+          "search": {
+            "search": "",
+            "smart": true,
+            "regex": false,
+            "caseInsensitive": true
+          }
+        },
+        {
+          "visible": true,
+          "search": {
+            "search": "",
+            "smart": true,
+            "regex": false,
+            "caseInsensitive": true
+          }
+        },
+        {
+          "visible": true,
+          "search": {
+            "search": "",
+            "smart": true,
+            "regex": false,
+            "caseInsensitive": true
+          }
+        },
+        {
+          "visible": true,
+          "search": {
+            "search": "",
+            "smart": true,
+            "regex": false,
+            "caseInsensitive": true
+          }
+        }
+      ]
+    },
+    "sidebar_button": 0
+  },
+  "output": {
+    "ic_par_path_expfiles": {
+      "html": "<div class=\"form-group shiny-input-container\">\n  <label class=\"control-label\" id=\"ic_par_path_expfiles_inner-label\" for=\"ic_par_path_expfiles_inner\">Select Files<\/label>\n  <div class=\"input-group\">\n    <label class=\"input-group-btn input-group-prepend\">\n      <span class=\"btn btn-default btn-file\">\n        Browse...\n        <input id=\"ic_par_path_expfiles_inner\" name=\"ic_par_path_expfiles_inner\" type=\"file\" style=\"position: absolute !important; top: -99999px !important; left: -99999px !important;\" multiple=\"multiple\"/>\n      <\/span>\n    <\/label>\n    <input type=\"text\" class=\"form-control\" placeholder=\"No file selected\" readonly=\"readonly\"/>\n  <\/div>\n  <div id=\"ic_par_path_expfiles_inner_progress\" class=\"progress active shiny-file-input-progress\">\n    <div class=\"progress-bar\"><\/div>\n  <\/div>\n<\/div>",
+      "deps": [
+
+      ]
+    },
+    "ic_specplot": {
+      "src": "[image data hash: 17e10090f4c98941fc3e5c1c6990d350]",
+      "width": 590,
+      "height": 400,
+      "alt": "Plot object",
+      "coordmap": {
+        "panels": [
+          {
+            "domain": {
+              "left": 0.008616666992505391,
+              "right": 20.1544169108073,
+              "bottom": -0.3104213863086434,
+              "top": 8.070956044024726
+            },
+            "range": {
+              "left": 64.8,
+              "right": 582.8,
+              "bottom": 334.2,
+              "top": 6.200000000000006
+            },
+            "log": {
+              "x": null,
+              "y": null
+            },
+            "mapping": {
+
+            }
+          }
+        ],
+        "dims": {
+          "width": 590,
+          "height": 400
+        }
+      }
+    },
+    "ic_table_peaks": {
+      "x": {
+        "filter": "none",
+        "vertical": false,
+        "extensions": [
+          "Buttons"
+        ],
+        "editable": {
+          "target": "column",
+          "disable": {
+            "columns": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10
+            ]
+          },
+          "numeric": [
+            8
+          ],
+          "date": [
+
+          ]
+        },
+        "container": "<table class=\"display\">\n  <thead>\n    <tr>\n      <th>Sample<\/th>\n      <th>Peak ID<\/th>\n      <th>RT max<\/th>\n      <th>RT start<\/th>\n      <th>RT end<\/th>\n      <th>Scan start<\/th>\n      <th>Scan end<\/th>\n      <th>Scan length<\/th>\n      <th>Mass bias method<\/th>\n      <th>f_value<\/th>\n      <th>k<\/th>\n      <th>Abs_q<\/th>\n      <th>Conc<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>",
+        "options": {
+          "server": false,
+          "dom": "Bfti",
+          "autoWidth": true,
+          "paging": false,
+          "scrollY": 753,
+          "pageLength": -1,
+          "buttons": [
+            {
+              "extend": "csv",
+              "title": null,
+              "text": "<i class=\"fa fa-file-csv\"><\/i>",
+              "titleAttr": "Download table as .csv",
+              "filename": "Peaktable"
+            },
+            {
+              "extend": "excel",
+              "title": null,
+              "text": "<i class=\"fa fa-file-excel-o\"><\/i>",
+              "titleAttr": "Download table as Excel",
+              "filename": "Peaktable"
+            },
+            {
+              "extend": "collection",
+              "text": "<i class=\"fa fa-question\"><\/i>",
+              "titleAttr": "Get Help on table",
+              "action": "function ( e, dt, node, config ) { Shiny.setInputValue('ic_help09', 1, {priority: 'event'}); }"
+            }
+          ],
+          "columnDefs": [
+            {
+              "className": "dt-right",
+              "targets": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                9,
+                10,
+                11,
+                12
+              ]
+            }
+          ],
+          "order": [
+
+          ],
+          "orderClasses": false,
+          "lengthMenu": [
+            -1,
+            10,
+            25,
+            50,
+            100
+          ],
+          "ajax": {
+            "type": "POST",
+            "data": "function(d) {\nd.search.caseInsensitive = true;\nd.search.smart = true;\nd.escape = true;\nvar encodeAmp = function(x) { x.value = x.value.replace(/&/g, \"%26\"); }\nencodeAmp(d.search);\n$.each(d.columns, function(i, v) {encodeAmp(v.search);});\n}"
+          },
+          "serverSide": true,
+          "processing": true
+        },
+        "selection": {
+          "mode": "single",
+          "selected": null,
+          "target": "row",
+          "selectable": null
+        }
+      },
+      "evals": [
+        "options.buttons.2.action",
+        "options.ajax.data"
+      ],
+      "jsHooks": [
+
+      ],
+      "deps": [
+        {
+          "name": "jquery",
+          "version": "3.6.0",
+          "src": {
+            "href": "jquery-3.6.0"
+          },
+          "meta": null,
+          "script": "jquery-3.6.0.min.js",
+          "stylesheet": null,
+          "head": null,
+          "attachment": null,
+          "all_files": true
+        },
+        {
+          "name": "dt-core",
+          "version": "1.13.4",
+          "src": {
+            "href": "dt-core-1.13.4"
+          },
+          "meta": null,
+          "script": "js/jquery.dataTables.min.js",
+          "stylesheet": [
+            "css/jquery.dataTables.min.css",
+            "css/jquery.dataTables.extra.css"
+          ],
+          "head": null,
+          "attachment": null,
+          "package": null,
+          "all_files": false
+        },
+        {
+          "name": "jszip",
+          "version": "1.13.4",
+          "src": {
+            "href": "jszip-1.13.4"
+          },
+          "meta": null,
+          "script": "jszip.min.js",
+          "stylesheet": null,
+          "head": null,
+          "attachment": null,
+          "package": null,
+          "all_files": false
+        },
+        {
+          "name": "dt-ext-buttons",
+          "version": "1.13.4",
+          "src": {
+            "href": "dt-ext-buttons-1.13.4"
+          },
+          "meta": null,
+          "script": [
+            "js/dataTables.buttons.min.js",
+            "js/buttons.html5.min.js",
+            "js/buttons.colVis.min.js",
+            "js/buttons.print.min.js"
+          ],
+          "stylesheet": "css/buttons.dataTables.min.css",
+          "head": null,
+          "attachment": null,
+          "package": null,
+          "all_files": false
+        },
+        {
+          "name": "crosstalk",
+          "version": "1.2.0",
+          "src": {
+            "href": "crosstalk-1.2.0"
+          },
+          "meta": null,
+          "script": "js/crosstalk.min.js",
+          "stylesheet": "css/crosstalk.min.css",
+          "head": null,
+          "attachment": null,
+          "all_files": true
+        }
+      ]
+    }
+  },
+  "export": {
+    "file_in": [
+      "structure(function () ",
+      "{",
+      "    .dependents$register()",
+      "    if (.invalidated || .running) {",
+      "        ..stacktraceoff..(self$.updateValue())",
+      "    }",
+      "    if (.error) {",
+      "        stop(.value)",
+      "    }",
+      "    if (.visible) ",
+      "        .value",
+      "    else invisible(.value)",
+      "}, observable = <environment>, cacheHint = list(userExpr = {",
+      "    req(input$ic_par_libsource)",
+      "    message(\"file_in\")",
+      "    out <- NULL",
+      "    if (input$ic_par_libsource == \"upload files\") {",
+      "        if (!is.null(input$ic_par_path_expfiles_inner)) {",
+      "            out <- try(lapply(input$ic_par_path_expfiles_inner$datapath, ",
+      "                function(x) {",
+      "                  read_raw_data(path = x, format = input$ic_par_inputformat)",
+      "                }))",
+      "            if (inherits(x = out, what = \"try-error\")) {",
+      "                out <- NULL",
+      "            }",
+      "            else {",
+      "                names(out) <- input$ic_par_path_expfiles_inner$name",
+      "            }",
+      "        }",
+      "        else {",
+      "            out <- NULL",
+      "        }",
+      "    }",
+      "    else {",
+      "        if (input$ic_par_libsource == \"testdata\") {",
+      "            updateSelectInput(inputId = \"ic_par_inputformat\", ",
+      "                selected = \"exp\")",
+      "            updateRadioButtons(inputId = \"ic_par_app_method\", ",
+      "                selected = \"IR-Delta\")",
+      "            out <- testdata",
+      "        }",
+      "        if (input$ic_par_libsource == \"testdata_IDMS\") {",
+      "            updateSelectInput(inputId = \"ic_par_inputformat\", ",
+      "                selected = \"generic\")",
+      "            updateRadioButtons(inputId = \"ic_par_app_method\", ",
+      "                selected = \"IDMS\")",
+      "            out <- testdata_IDMS",
+      "        }",
+      "    }",
+      "    if (!is.null(out)) {",
+      "        rt_shift(rep(0, length(out)))",
+      "        updateSelectInput(inputId = \"ic_par_focus_sample\", choices = paste(\"Sample\", ",
+      "            1:length(out)))",
+      "        if (length(out) > 1) {",
+      "            enable(selector = \"#ic_par_specplot input[value='overlay_mi']\")",
+      "        }",
+      "        else {",
+      "            updateCheckboxGroupInput(inputId = \"ic_par_specplot\", ",
+      "                selected = c(\"overlay_pb\", \"overlay_si\"))",
+      "            disable(selector = \"#ic_par_specplot input[value='overlay_mi']\")",
+      "            hide(id = \"ic_par_focus_sample\")",
+      "        }",
+      "    }",
+      "    else {",
+      "        ic_table_peaks_edit(NULL)",
+      "    }",
+      "    validate(need(out, message = \"No valid data\"))",
+      "    return(out)",
+      "}), class = \"function\")"
+    ]
+  }
+}
