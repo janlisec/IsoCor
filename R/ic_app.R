@@ -291,60 +291,6 @@ app_server <- function(input, output, session) {
     }
   })
   
-  
-  ### internal functions #################################################----
-  # define the (pre) processing steps in a functions
-  MALDIquant_pre_process <- function(x) {
-    hWS <- isolate(input$ic_par_halfWindowSize)
-    if (!all(sapply(x, inherits, "MassSpectrum"))) browser()
-    if (input$ic_par_app_method=="IDMS") {
-      x_s <- MALDIquant::smoothIntensity(object = x, method = "SavitzkyGolay", halfWindowSize = 10)
-      x_bl <- lapply(x_s, function(y) { MALDIquant::estimateBaseline(object = y, method = "TopHat", halfWindowSize = 185) })
-      x <- lapply(1:length(x), function(i) { 
-        x[[i]]@intensity <- x[[i]]@intensity - x_bl[[i]][,"intensity"] 
-        # set negative intensities to zero
-        #x[[i]]@intensity[x[[i]]@intensity<0] <- 0
-        return(x[[i]])
-      })
-      return(x)
-    } else {
-      if (isolate(input$ic_par_baseline_method)!="none") {
-        if (input$ic_par_baseline_method=="Dariyah") {
-          # $$not implemented
-        } else {
-          x <- MALDIquant::removeBaseline(object = x, method = isolate(input$ic_par_baseline_method))
-        }
-      } 
-    }
-    return(x)
-  }
-  
-  # peak detection function
-  MALDIquant_peaks <- function(x) {
-    hWS <- isolate(input$ic_par_halfWindowSize)
-    if (input$ic_par_app_method=="IDMS") {
-      x <- suppressWarnings(MALDIquant::smoothIntensity(x, method = "SavitzkyGolay", halfWindowSize = input$ic_par_IDMS_halfWindowSize))
-      out <- MALDIquant::detectPeaks(object = x, method = "MAD", SNR = 20)
-    } else {
-      if (hWS>0 && hWS<floor(length(x)/2)) {
-        x <- MALDIquant::smoothIntensity(object = x, method = "MovingAverage", halfWindowSize = hWS)
-      }
-      # set a minimum hWS to detect peaks
-      hWS <- ifelse(hWS>0, hWS, 25)
-      out <- MALDIquant::detectPeaks(object = x, method = "MAD", halfWindowSize = hWS, SNR = isolate(input$ic_par_peakpicking_SNR))
-    }
-    noise <- 0
-    if (input$ic_par_peakpicking_noise) {
-      noise <- isolate(input$ic_par_peakpicking_SNR)*min(MALDIquant::estimateNoise(x)[,2], na.rm=TRUE)
-    }
-    k <- ifelse(input$ic_par_app_method=="IDMS", 5, input$ic_par_peakpicking_k)
-    noise <- ifelse(input$ic_par_app_method=="IDMS", 0, noise)
-    out@metaData[["pb"]] <- ldply(out@mass, function(p) { 
-      find_peak_boundaries(int = MALDIquant::intensity(x), p = which.min(abs(MALDIquant::mass(x) - p)), k = k, min_scans = 5, noise = noise)
-    })
-    return(out)
-  }
-  
   ### reactives ########################################################### ----
   # get input data as list of tables
   file_in <- reactive({
@@ -406,14 +352,14 @@ app_server <- function(input, output, session) {
   file_in_cols <- reactive({
     # [JL] we need input$ic_par_inputformat here to ensure to trigger updates below in observeEvent(file_in_cols())
     req(file_in(), input$ic_par_inputformat)
-    message("file_in_cols")
+    #req(file_in())
     headers <- sapply(lapply(file_in(), colnames), paste, collapse="")
     validate(need(length(unique(headers))==1, message = "Files contain different headers"))
+    message("[file_in_cols] set")
     return(colnames(file_in()[[1]]))
   })
   
   # IDMS reactive objects ----
-  
   IDMS_data <- reactive({
     req(file_in(), input$ic_par_IDMS_f, input$ic_par_IR_sample, input$ic_par_Abund_MI, input$ic_par_Inj_Amount, input$ic_par_IR_spike, input$ic_par_Abund_SI, input$ic_par_MF_Spike, input$ic_par_mi_amu, input$ic_par_si_amu)
     validate(need(input$ic_par_app_method=="IDMS", "Method IDMS not selected"))
@@ -429,6 +375,7 @@ app_server <- function(input, output, session) {
     )
     coef <- input$ic_par_MF_Spike * (input$ic_par_mi_amu / input$ic_par_si_amu) * (input$ic_par_Abund_SI / input$ic_par_Abund_MI)
     validate(need(is.finite(coef), "Can not compute valid coef with these parameters. Check 'MI amu' and 'SI amu'"))
+    validate(need(all(sapply(idms, function(x) { all(c(input$ic_par_mi_col, input$ic_par_si_col) %in% colnames(x)) })), "No valid columns selected"))
     idms <- lapply(idms, function(x) { 
       x$IR<- x[,input$ic_par_mi_col]/x[,input$ic_par_si_col]
       x$IR_cor <- x$IR * k
@@ -445,68 +392,31 @@ app_server <- function(input, output, session) {
   # convert input tables into MALDIquant spectra format for selected MI trace and RT column ----
   ic_mi_spectra_raw <- reactive({
     req(file_in(), input$ic_par_rt_col, input$ic_par_mi_col, cut_range$min, rt_shift(), input$ic_par_app_method)
-    validate(need(all(c(input$ic_par_rt_col, input$ic_par_mi_col) %in% file_in_cols()), message = "Selected columns inconsistent with currently uploaded data"))
-    validate(need(all(sapply(file_in(), function(x) { all(diff(x[,input$ic_par_rt_col])>0) })), message = "You selected a time column with non continuous values"))
-    validate(need(expr = input$ic_par_halfWindowSize<floor(min(sapply(file_in(),nrow))/2), message = "Smoothing parameter is larger than 0.5 * data length"))
+    if (input$ic_par_app_method=="IDMS") req(IDMS_data())
     message("ic_mi_spectra_raw")
-    lapply(1:length(file_in()), function(k) {
-      x <- file_in()[[k]]
-      m <- x[, input$ic_par_rt_col]
-      m <- m-rt_shift()[k]
-      flt <- m>=cut_range$min & m<=cut_range$max
-      m <- m[flt]
-      if (input$ic_par_app_method=="IDMS") {
-        i <- IDMS_data()[[k]][flt, "MF"]
-      } else {
-        i <- x[flt, input$ic_par_mi_col]
-      }
-      suppressWarnings(
-        createMassSpectrum(
-          mass = m,
-          intensity = i,
-          metaData = list(
-            name = "Name",
-            file = names(file_in())[k]
-          )
-        )
-      )
-    })
+    get_spectrum(
+      data = if (input$ic_par_app_method=="IDMS") IDMS_data() else file_in(), 
+      rt_col = input$ic_par_rt_col, 
+      int_col = ifelse(input$ic_par_app_method=="IDMS", "MF", input$ic_par_mi_col), 
+      cut_range = shiny::reactiveValuesToList(cut_range), 
+      rt_shift = rt_shift()
+    )
   })
   
   # convert input tables into MALDIquant spectra format for selected SI trace and RT column ----
   ic_si_spectra_raw <- reactive({
-    req(file_in(), input$ic_par_rt_col, input$ic_par_mi_col, cut_range$min)
-    validate(need(all(sapply(file_in(), function(x) { all(diff(x[,input$ic_par_rt_col])>0) })), message = "You selected a time column with non continuous values"))
-    validate(need(all(c(input$ic_par_rt_col, input$ic_par_si_col) %in% file_in_cols()), message = "Selected columns inconsistent with currently uploaded data"))
+    req(file_in(), input$ic_par_rt_col, input$ic_par_si_col, cut_range$min, rt_shift())
+    req(input$ic_par_app_method=="IR-Delta")
     message("ic_si_spectra_raw")
-    lapply(1:length(file_in()), function(k) {
-      x <- file_in()[[k]]
-      m <- x[, input$ic_par_rt_col]
-      m <- m-rt_shift()[k]
-      flt <- m>=cut_range$min & m<=cut_range$max
-      m <- m[flt]
-      i <- x[flt, input$ic_par_si_col]
-      suppressWarnings(
-        createMassSpectrum(
-          mass = m,
-          intensity = i,
-          metaData = list(
-            name = "Name",
-            file = names(file_in())[k]
-          )
-        )
-      )
-    })
+    get_spectrum(data = file_in(), rt_col = input$ic_par_rt_col, int_col = input$ic_par_si_col, cut_range = shiny::reactiveValuesToList(cut_range), rt_shift = rt_shift())
   })
   
   # provide spectra based on processed raw data ----
   ic_mi_spectra <- reactive({
-    req(ic_mi_spectra_raw(), input$ic_par_halfWindowSize, input$ic_par_baseline_method, input$ic_par_peakpicking_SNR)
+    req(ic_mi_spectra_raw(), input$ic_par_halfWindowSize, input$ic_par_baseline_method, input$ic_par_peakpicking_SNR, input$ic_par_app_method)
     message("ic_mi_spectra")
-    #input$ic_par_halfWindowSize
-    input$ic_par_baseline_method
-    #input$ic_par_peakpicking_SNR
-    out <- try(MALDIquant_pre_process(ic_mi_spectra_raw()))
+    # wrap processing in try to account for extreme parameter selections
+    out <- try(spec_pre_process(data = ic_mi_spectra_raw(), hWS = isolate(input$ic_par_halfWindowSize), BLmethod = input$ic_par_baseline_method, wf = input$ic_par_app_method))
     validate(need(!inherits(out, "try-error"), "Could not preprocess ic_mi_spectra_raw()"))
     return(out)
   })
@@ -515,28 +425,28 @@ app_server <- function(input, output, session) {
   ic_si_spectra <- reactive({
     req(ic_si_spectra_raw(), input$ic_par_baseline_method)
     message("ic_si_spectra")
-    #input$ic_par_halfWindowSize
-    input$ic_par_baseline_method
-    #input$ic_par_peakpicking_SNR
-    MALDIquant_pre_process(ic_si_spectra_raw())
+    spec_pre_process(data = ic_si_spectra_raw(), hWS = isolate(input$ic_par_halfWindowSize), BLmethod = input$ic_par_baseline_method, wf = input$ic_par_app_method)
   })
   
   # identify peaks in processed mi spectra ----
   ic_mi_peaks <- reactive({
     req(ic_mi_spectra())
     message("ic_mi_peaks")
+    # disable button here, will be enabled potentially if consistent number of peaks is found
     disable(id = "ic_par_align_rt")
-    lapply(ic_mi_spectra(), MALDIquant_peaks)
+    # wrap peak detection in try to account for extreme parameter selections
+    pks <- try(lapply(ic_mi_spectra(), function(x) {
+      get_peaks(x=x, hWS = isolate(input$ic_par_halfWindowSize), SNR = isolate(input$ic_par_peakpicking_SNR), wf = input$ic_par_app_method, hWS_IDMS = input$ic_par_IDMS_halfWindowSize, set_noise = input$ic_par_peakpicking_noise, k = input$ic_par_peakpicking_k)
+    }), silent = TRUE)
+    validate(need(!(inherits(pks, "try-error")), "Can't obtain peaks from MI spectra"))
+    return(pks)
   })
   
   # IDMS table ----
   ic_table_idms_pre <- reactive({
-    req(ic_mi_spectra())
-    # input$ic_par_halfWindowSize
-    # input$ic_par_peakpicking_SNR
+    req(ic_mi_spectra(), ic_mi_peaks())
     spc <- ic_mi_spectra()
-    pks <- try(lapply(spc, MALDIquant_peaks), silent = TRUE)
-    validate(need(!(inherits(pks, "try-error")), "Can't obtain peaks from IDMS spectra"))
+    pks <- ic_mi_peaks()
     out <- prep_tab_peaks(p = pks, s = spc, mb = current_mb_method())
     #f_value <- log(x = input$ic_par_IDMS_f, base = input$ic_par_mi_amu/input$ic_par_si_amu)
     f_value <- input$ic_par_IDMS_f
@@ -556,7 +466,7 @@ app_server <- function(input, output, session) {
     return(out)
   })
   
-    # mi peak table ----
+  # mi peak table ----
   ic_table_peaks_pre <- reactive({
     req(ic_mi_peaks())
     message("ic_table_peaks_pre")
@@ -586,12 +496,10 @@ app_server <- function(input, output, session) {
     )
   })
   
-  
   # IDMS observer
   observeEvent(input$ic_par_IDMS_mb_method, {
     current_mb_method(input$ic_par_IDMS_mb_method)
   }, ignoreInit = FALSE) 
-  
   
   # add or remove zone levels ----
   observeEvent(input$ic_btn_add_zone, {
@@ -683,7 +591,7 @@ app_server <- function(input, output, session) {
   # table of peaks of 'new sample' ----
   shiny::observeEvent(ic_table_peaks_pre(), {
     tmp <- ic_table_peaks_pre()
-    if (input$ic_par_app_method!="IDMS" && all(table(tmp[,"Peak ID"])==max(tmp[,"Sample"]))) {
+    if (input$ic_par_app_method!="IDMS" && nrow(tmp)>=1 && all(table(tmp[,"Peak ID"])==max(tmp[,"Sample"]))) {
       np <- max(tmp[,"Peak ID"])
       if (length(np)==1 && np>=2) {
         type <- c("standard", rep("sample", np-2), "standard")
@@ -718,11 +626,16 @@ app_server <- function(input, output, session) {
   reset_times <- function() {
     req(file_in(), file_in_cols(), input$ic_par_rt_col)
     if (input$ic_par_rt_col %in% file_in_cols()) {
+      # reset range cut
       rng <- sapply(file_in(), function(x) { range(x[,input$ic_par_rt_col], na.rm=TRUE) })
       cut_range$min <- min(rng[1,])
       cut_range$max <- max(rng[2,])
       status_range_cut("off")
       updateActionButton(inputId = "ic_par_cut_range", label = "cut range")
+      # reset alignment
+      rt_shift(rep(0, length(file_in())))
+      status_align("off")
+      updateActionButton(inputId = "ic_par_align_rt", label = "align rt")
       # ...reset display range
       spec_plots_xmin(cut_range$min)
       spec_plots_xmax(cut_range$max)
@@ -731,6 +644,7 @@ app_server <- function(input, output, session) {
   
   # update column selectors when input columns change  
   observeEvent(file_in_cols(), {
+  #observe({
     fic <- file_in_cols()
     n <- length(fic)
     mi_selected <- switch(
@@ -793,6 +707,13 @@ app_server <- function(input, output, session) {
       shinyjs::runjs('document.getElementById("ic_par_cut_range").style.backgroundColor = "#FFFFFF";')
     }
   })
+  observeEvent(status_align(), {
+    btn_col <- if (status_align()=="on") {
+      shinyjs::runjs('document.getElementById("ic_par_align_rt").style.backgroundColor = "#FFA500";')
+    } else {
+      shinyjs::runjs('document.getElementById("ic_par_align_rt").style.backgroundColor = "#FFFFFF";')
+    }
+  })
   
   # set cut range to displayed spectrum range when user triggers this action button
   observeEvent(input$ic_par_align_rt, {
@@ -802,13 +723,11 @@ app_server <- function(input, output, session) {
       }), 1, median)
       rt_shift(out)
       updateActionButton(inputId = "ic_par_align_rt", label = "undo align")
-      shinyjs::runjs('document.getElementById("ic_par_align_rt").style.backgroundColor = "#FFA500";')
       status_align("on")
     } else {
       rt_shift(rep(0, length(file_in())))
       updateActionButton(inputId = "ic_par_align_rt", label = "align rt")
       status_align("off")
-      shinyjs::runjs('document.getElementById("ic_par_align_rt").style.backgroundColor = "#FFFFFF";')
     }
   })
   
@@ -1105,16 +1024,16 @@ app_server <- function(input, output, session) {
   
   # spectrum plot ----
   output$ic_specplot <- shiny::renderPlot({
-    req(file_in(), ic_mi_spectra(), ic_si_spectra(), input$ic_par_si_col_name, input$ic_par_mi_col_name, ic_table_peaks_edit())
+    req(file_in(), ic_mi_spectra(), input$ic_par_si_col_name, input$ic_par_mi_col_name, ic_table_peaks_edit(), input$ic_par_app_method)
     message("output$ic_specplot")
     chk <- input$ic_par_app_method=="IDMS"
+    if (!chk) req(ic_si_spectra())
+    opt <- input$ic_par_specplot
     if (chk) {
-      opt <- input$ic_par_specplot
       opt[!(opt %in% c("overlay_si"))]
       si_spec <- NULL
       ylab <- "MF"
     } else {
-      opt <- input$ic_par_specplot
       si_spec <- ic_si_spectra()
       ylab <- "Intensity [V]"
     }

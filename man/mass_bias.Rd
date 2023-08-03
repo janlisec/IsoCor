@@ -7,7 +7,7 @@
 mass_bias(
   mi_amu = 0,
   si_amu = 0,
-  method = c("Linear", "Russel", "Exponential")[1],
+  method = c("Linear", "Russel", "Exponential"),
   f_value = 0
 )
 }

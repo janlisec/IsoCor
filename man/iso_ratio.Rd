@@ -4,11 +4,7 @@
 \alias{iso_ratio}
 \title{iso_ratio}
 \usage{
-iso_ratio(
-  data = data.frame(X = rnorm(10), Y = rnorm(10)),
-  method = c("PBP", "PAI", "LRS")[1],
-  thr = 1
-)
+iso_ratio(data, method = c("PBP", "PAI", "LRS"), thr = 1)
 }
 \arguments{
 \item{data}{data.frame with two columns specifying data for isotope 1 and 2 respectively.}
