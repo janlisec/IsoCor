@@ -1,6 +1,6 @@
 {
   "input": {
-    "CurrentScreenHeight": 1323,
+    "CurrentScreenHeight": 1080,
     "ic_help01": 0,
     "ic_help02": 0,
     "ic_help03": 0,
@@ -222,8 +222,8 @@
       ]
     },
     "ic_specplot": {
-      "src": "[image data hash: 17e10090f4c98941fc3e5c1c6990d350]",
-      "width": 590,
+      "src": "[image data hash: 38c72f2d5051bdba02c446d9009b5f3e]",
+      "width": 1170,
       "height": 400,
       "alt": "Plot object",
       "coordmap": {
@@ -237,7 +237,7 @@
             },
             "range": {
               "left": 64.8,
-              "right": 582.8,
+              "right": 1162.8,
               "bottom": 334.2,
               "top": 6.200000000000006
             },
@@ -251,7 +251,7 @@
           }
         ],
         "dims": {
-          "width": 590,
+          "width": 1170,
           "height": 400
         }
       }
@@ -292,7 +292,7 @@
           "dom": "Bfti",
           "autoWidth": true,
           "paging": false,
-          "scrollY": 753,
+          "scrollY": 510,
           "pageLength": -1,
           "buttons": [
             {
