@@ -28,7 +28,7 @@ Imports:
     golem,
     htmltools,
     MALDIquant,
-    markdown,
+    markdown (>= 1.5.0),
     plyr,
     shiny,
     shinyalert,
