@@ -18,22 +18,19 @@
 #' @return A single numeric value. The robust ratio estimate calculated from \code{data}.
 #' @importFrom stats lm
 #' @export
-iso_ratio <- function(
-  data = data.frame("X"=rnorm(10), "Y"=rnorm(10)),
-  #method = c("mean","area","slope")[1], 
-  method = c("PBP","PAI","LRS")[1],
-  thr = 1) {
+iso_ratio <- function(data, method = c("PBP", "PAI", "LRS"), thr = 1) {
   
-  # test if data and thr numeric
-  # stopifnot(is.numeric(data))
-  stopifnot(length(thr)==1)
-  stopifnot(is.numeric(thr))
-  stopifnot(thr>=0 & thr<=1)
+  method <- match.arg(method)
+  
+  # test if thr is valid input
+  stopifnot(exprs = {
+    "[iso_ratio] parameter thr should be of length=1" = length(thr)==1
+    "[iso_ratio] parameter thr should be of numeric" = is.numeric(thr)
+    "[iso_ratio] parameter thr should be within interval {0, 1}" = thr>=0 & thr<=1
+  })
   
   # methods are sensitive against missing values and 0 values
-  flt <- apply(data, 1, function(x) {
-    all(is.finite(x)) && all(x>0)
-  })
+  flt <- apply(data, 1, function(x) { all(is.finite(x)) && all(x>0) })
   if (any(!flt)) {
     #message(paste("[iso_ratio] Did remove", sum(!flt), "Scans due to missing or 0 values"))
     data <- data[flt,]
@@ -69,15 +66,17 @@ iso_ratio <- function(
 #' IsoCor::mass_bias(32, 34, "Linear", 0.1)
 #' @return A single numeric value K to be used for scaling.
 #' @export
-mass_bias <- function(
-    mi_amu = 0, 
-    si_amu = 0,
-    method = c("Linear","Russel","Exponential")[1], 
-    f_value = 0) {
+mass_bias <- function(mi_amu = 0, si_amu = 0, method = c("Linear","Russel","Exponential"), f_value = 0) {
+  
+  method <- match.arg(method)
+  
   # test f_value
-  stopifnot(length(f_value)==1)
-  stopifnot(is.numeric(f_value))
-  # apply your method of choice
+  stopifnot(exprs = {
+    "[mass_bias] parameter f_value should be of length=1" = length(f_value)==1
+    "[mass_bias] parameter f_value should be of numeric" = is.numeric(f_value)
+  })
+
+  # apply method of choice
   k <- switch(
     method,
     "Linear" = 1 + f_value * (si_amu - mi_amu),
@@ -85,6 +84,7 @@ mass_bias <- function(
     "Exponential"= exp(f_value * (si_amu - mi_amu)),
     1
   )
+  
   return(k)
 }
 
