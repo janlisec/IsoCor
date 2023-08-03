@@ -4,4 +4,6 @@
 .httr-oauth
 .DS_Store
 .Rbuildignore
+.Renviron
 rsconnect/shinyapps.io/jali/IsoCor.dcf
+rsconnect/
