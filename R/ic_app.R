@@ -355,15 +355,17 @@ app_server <- function(input, output, session) {
     #req(file_in())
     headers <- sapply(lapply(file_in(), colnames), paste, collapse="")
     validate(need(length(unique(headers))==1, message = "Files contain different headers"))
-    message("[file_in_cols] set")
+    message("[file_in_cols] set for input format ", input$ic_par_inputformat)
     return(colnames(file_in()[[1]]))
   })
   
   # IDMS reactive objects ----
   IDMS_data <- reactive({
-    req(file_in(), input$ic_par_IDMS_f, input$ic_par_IR_sample, input$ic_par_Abund_MI, input$ic_par_Inj_Amount, input$ic_par_IR_spike, input$ic_par_Abund_SI, input$ic_par_MF_Spike, input$ic_par_mi_amu, input$ic_par_si_amu)
+    req(file_in(), input$ic_par_IDMS_f, input$ic_par_IR_sample, input$ic_par_Abund_MI, input$ic_par_Inj_Amount, input$ic_par_IR_spike, input$ic_par_Abund_SI, input$ic_par_MF_Spike, input$ic_par_mi_amu, input$ic_par_si_amu, current_mb_method())
     validate(need(input$ic_par_app_method=="IDMS", "Method IDMS not selected"))
-    idms <- file_in()
+    validate(need(all(sapply(file_in(), function(x) { all(c(input$ic_par_mi_col, input$ic_par_si_col) %in% colnames(x)) })), "Selected columns not found in input data"))
+    validate(need(all(!duplicated(c(input$ic_par_mi_col, input$ic_par_si_col))), "Identical columns selected for SI and MI"))
+    validate(need(!identical(input$ic_par_mi_amu, input$ic_par_si_amu), "Identical amu specified for SI and MI"))
     # R_observe/R_true
     #f_value <- log(x = input$ic_par_IDMS_f, base = input$ic_par_mi_amu/input$ic_par_si_amu)
     k <- IsoCor::mass_bias(
@@ -375,8 +377,8 @@ app_server <- function(input, output, session) {
     )
     coef <- input$ic_par_MF_Spike * (input$ic_par_mi_amu / input$ic_par_si_amu) * (input$ic_par_Abund_SI / input$ic_par_Abund_MI)
     validate(need(is.finite(coef), "Can not compute valid coef with these parameters. Check 'MI amu' and 'SI amu'"))
-    validate(need(all(sapply(idms, function(x) { all(c(input$ic_par_mi_col, input$ic_par_si_col) %in% colnames(x)) })), "No valid columns selected"))
-    idms <- lapply(idms, function(x) { 
+    message("IDMS_data")
+    idms <- lapply(file_in(), function(x) { 
       x$IR<- x[,input$ic_par_mi_col]/x[,input$ic_par_si_col]
       x$IR_cor <- x$IR * k
       # previous version of Dariya (from 03/2023)
@@ -391,8 +393,9 @@ app_server <- function(input, output, session) {
   
   # convert input tables into MALDIquant spectra format for selected MI trace and RT column ----
   ic_mi_spectra_raw <- reactive({
-    req(file_in(), input$ic_par_rt_col, input$ic_par_mi_col, cut_range$min, rt_shift(), input$ic_par_app_method)
+    req(file_in(), input$ic_par_rt_col, input$ic_par_mi_col, cut_range$min, cut_range$max, rt_shift(), input$ic_par_app_method)
     if (input$ic_par_app_method=="IDMS") req(IDMS_data())
+    #browser()
     message("ic_mi_spectra_raw")
     get_spectrum(
       data = if (input$ic_par_app_method=="IDMS") IDMS_data() else file_in(), 
@@ -444,7 +447,8 @@ app_server <- function(input, output, session) {
   
   # IDMS table ----
   ic_table_idms_pre <- reactive({
-    req(ic_mi_spectra(), ic_mi_peaks())
+    req(ic_mi_spectra(), ic_mi_peaks(), current_mb_method())
+    message("ic_table_idms_pre")
     spc <- ic_mi_spectra()
     pks <- ic_mi_peaks()
     out <- prep_tab_peaks(p = pks, s = spc, mb = current_mb_method())
@@ -468,7 +472,7 @@ app_server <- function(input, output, session) {
   
   # mi peak table ----
   ic_table_peaks_pre <- reactive({
-    req(ic_mi_peaks())
+    if (input$ic_par_app_method=="IDMS") req(ic_table_idms_pre()) else req(ic_mi_peaks())
     message("ic_table_peaks_pre")
     if (input$ic_par_app_method=="IDMS") {
       out <- ic_table_idms_pre()
@@ -476,7 +480,7 @@ app_server <- function(input, output, session) {
       out <- prep_tab_peaks(p = ic_mi_peaks(), s = ic_mi_spectra(), mb = isolate(current_mb_method()))
     }
     # enable ic_par_align_rt only if consistent number of peaks are found in all samples and more than 2 samples are available
-    if (length(file_in())>=2 & length(unique(table(out[,"Peak ID"])))==1) { enable(id = "ic_par_align_rt") }
+    if (length(ic_mi_peaks())>=2 & length(unique(table(out[,"Peak ID"])))==1) { enable(id = "ic_par_align_rt") }
     return(out)
   })
   
@@ -644,7 +648,6 @@ app_server <- function(input, output, session) {
   
   # update column selectors when input columns change  
   observeEvent(file_in_cols(), {
-  #observe({
     fic <- file_in_cols()
     n <- length(fic)
     mi_selected <- switch(
@@ -874,6 +877,7 @@ app_server <- function(input, output, session) {
   shiny::observeEvent(ic_table_peaks_edit(), {
     # [ToDo] maybe switch off for IDMS
     #input$ic_par_app_method=="IDMS"
+    req(input$ic_par_app_method!="IDMS")
     update_k()
   })
   shiny::observeEvent(input$ic_par_mi_amu, {
@@ -1024,8 +1028,9 @@ app_server <- function(input, output, session) {
   
   # spectrum plot ----
   output$ic_specplot <- shiny::renderPlot({
-    req(file_in(), ic_mi_spectra(), input$ic_par_si_col_name, input$ic_par_mi_col_name, ic_table_peaks_edit(), input$ic_par_app_method)
+    req(ic_mi_spectra(), input$ic_par_si_col_name, input$ic_par_mi_col_name, ic_table_peaks_edit(), input$ic_par_app_method)
     message("output$ic_specplot")
+    #browser()
     chk <- input$ic_par_app_method=="IDMS"
     if (!chk) req(ic_si_spectra())
     opt <- input$ic_par_specplot
