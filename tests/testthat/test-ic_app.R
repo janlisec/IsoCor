@@ -32,7 +32,9 @@ testthat::test_that(
 	                "ic_table_peaks_rows_current", "ic_table_peaks_rows_selected", 
 	                "ic_table_peaks_search", "ic_table_peaks_state", "sidebar_button"
 	  )
+	  
 	  testthat::expect_true(all(curr_inp %in% names(init_vals$input)))
+	  testthat::expect_equal(curr_inp, names(init_vals$input))
 	  # 
 	  # # check if IDMS test data were correctly initialized as 'file_in'
 	  # testthat::expect_equal(shiny::isolate(init_vals$export$`file_in`()), IsoCor::testdata_IDMS)
