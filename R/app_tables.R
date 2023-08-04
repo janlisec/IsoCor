@@ -88,8 +88,10 @@ style_tab_peaks <- function(data, IDMS = FALSE, sh) {
       action = DT::JS(paste0("function ( e, dt, node, config ) { Shiny.setInputValue('ic_help0", ifelse(IDMS, 9, 6), "', 1, {priority: 'event'}); }"))
     )
   )
+  editable <- list(target = "column", disable = list(columns = c(0:8,10)), numeric = 9)
   if (IDMS) {
     btn_list <- btn_list[-c(3,4)]
+    editable <- FALSE
   }
   DT::datatable(
     data = data,
@@ -104,7 +106,7 @@ style_tab_peaks <- function(data, IDMS = FALSE, sh) {
       "buttons" = btn_list
     ), 
     "selection" = list(mode="single", target="row"), 
-    "editable" = list(target = "column", disable = list(columns = c(0:8,10)), numeric = 9), 
+    "editable" = editable, 
     "rownames" = NULL
   )
 }
