@@ -217,7 +217,7 @@ get_spectrum <- function(data, rt_col = "Minutes", int_col = "MF", cut_range = N
 #' @keywords internal
 #' @noRd
 #' @importFrom MALDIquant smoothIntensity estimateBaseline removeBaseline
-spec_pre_process <- function(data, hWS = isolate(input$ic_par_halfWindowSize), BLmethod = isolate(input$ic_par_baseline_method), wf = c("IDMS", "IR-Delta")) {
+spec_pre_process <- function(data, hWS = 25, BLmethod = "TopHat", wf = c("IDMS", "IR-Delta")) {
   wf <- match.arg(wf)
   shiny::validate(shiny::need(all(sapply(data, inherits, "MassSpectrum")), "[MALDIquant_pre_process] Input not of class MassSpectrum"))
   if (wf=="IDMS") {
@@ -254,7 +254,7 @@ spec_pre_process <- function(data, hWS = isolate(input$ic_par_halfWindowSize), B
 #' @keywords internal
 #' @noRd
 #' @importFrom MALDIquant smoothIntensity detectPeaks estimateNoise intensity mass
-get_peaks <- function(x, hWS = isolate(input$ic_par_halfWindowSize), SNR = isolate(input$ic_par_peakpicking_SNR), wf = c("IDMS", "IR-Delta"), hWS_IDMS = input$ic_par_IDMS_halfWindowSize, set_noise = input$ic_par_peakpicking_noise, k = input$ic_par_peakpicking_k) {
+get_peaks <- function(x, hWS = 25, SNR = 25, wf = c("IDMS", "IR-Delta"), hWS_IDMS = 25, set_noise = FALSE, k = 5) {
   wf <- match.arg(wf)
   if (wf=="IDMS") {
     shiny::validate(shiny::need(hWS_IDMS>=0, "halfWindowSize (smoothing) should not be a negative number"))
