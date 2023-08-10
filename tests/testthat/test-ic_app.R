@@ -16,7 +16,7 @@ testthat::test_that(
 	  init_vals <- app$get_values()
 
 	  # check if inputs are consistent
-	  curr_inp <- c("CurrentScreenHeight", "ic_help01", "ic_help02", "ic_help03", 
+	  previous <- c("CurrentScreenHeight", "ic_help01", "ic_help02", "ic_help03", 
 	                "ic_help04", "ic_help05", "ic_help10", "ic_par_Abund_MI", "ic_par_Abund_SI", 
 	                "ic_par_IDMS_f", "ic_par_IDMS_halfWindowSize", "ic_par_IDMS_mb_method", 
 	                "ic_par_IR_sample", "ic_par_IR_spike", "ic_par_Inj_Amount", "ic_par_MF_Spike", 
@@ -32,9 +32,11 @@ testthat::test_that(
 	                "ic_table_peaks_rows_current", "ic_table_peaks_rows_selected", 
 	                "ic_table_peaks_search", "ic_table_peaks_state", "sidebar_button"
 	  )
-	  
-	  testthat::expect_true(all(curr_inp %in% names(init_vals$input)))
-	  testthat::expect_equal(curr_inp, names(init_vals$input))
+	  current <- names(init_vals$input)
+	  testthat::expect_true(all(previous %in% current))
+	  test <- current[!(current %in% previous)]
+	  if (length(test)>=1) message(test)
+	  testthat::expect_equal(current, previous)
 	  # 
 	  # # check if IDMS test data were correctly initialized as 'file_in'
 	  # testthat::expect_equal(shiny::isolate(init_vals$export$`file_in`()), IsoCor::testdata_IDMS)
