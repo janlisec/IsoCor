@@ -229,11 +229,13 @@ app_server <- function(input, output, session) {
   # This is of course not useful in a shiny app, but was required from CRAN which
   # in turn led to problems on ShinyServer as par() opens the standard graphics device
   # which made the hack of pdf(NULL) neccessary... :(
-  grDevices::pdf(NULL)
-  old_par <- par(no.readonly = TRUE)
-  grDevices::dev.off()
-  on.exit(expr = { par(old_par) }, add = TRUE)
-
+  if (!get_golem_config("bam_server")) {
+    grDevices::pdf(NULL)
+    old_par <- par(no.readonly = TRUE)
+    grDevices::dev.off()
+    on.exit(expr = { par(old_par) }, add = TRUE)
+  }
+  
   # load app data on app start
   testdata <- IsoCor::testdata
   testdata_IDMS <- IsoCor::testdata_IDMS
