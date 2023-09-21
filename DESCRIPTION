@@ -1,6 +1,6 @@
 Package: IsoCor
 Title: Analyze Isotope Ratios in a 'Shiny'-App
-Version: 0.2.4
+Version: 0.2.5
 Date: 2023-08-02
 Authors@R: person("Jan", "Lisec", , "jan.lisec@bam.de", role = c("aut", "cre"),
     comment = c(ORCID = "0000-0003-1220-2286"))
@@ -18,7 +18,7 @@ Description: Analyzing Inductively Coupled Plasma - Mass Spectrometry
     in the corresponding article <https://doi.org/10.1039/D2JA00208F>. 
     The most recent version of 'IsoCor' can be tested online at <https://bam.de/isocor>.
 License: GPL (>= 3)
-URL: https://git.bam.de/jlisec/isocor
+URL: https://github.com/janlisec/IsoCor
 Depends: 
     R (>= 3.50)
 Imports: 
