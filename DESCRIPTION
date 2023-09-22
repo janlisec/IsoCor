@@ -26,16 +26,16 @@ Imports:
     config,
     DT,
     golem,
-    htmltools,
     MALDIquant,
     markdown (>= 1.5.0),
     plyr,
     shiny,
-    shinyalert,
+    shinyalert (>= 3.0.0.9000),
     shinyjs
 Suggests:
     shinytest2,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    vdiffr
 Encoding: UTF-8
 LazyData: true
 LazyDataCompression: bzip2
