@@ -225,3 +225,30 @@ prep_tab_ratios <- function(pks, mi_pks, mi_spc, si_spc, isos, bl_method, zones,
   }
   return(out)
 }
+
+#' @title prep_tab_deltas.
+#' @param df ic_table_ratios_pre().
+#' @param prec Rounding precision for output columns `Mean Delta` and `SD Delta`.
+#' @return A data frame of peaks.
+#' @keywords internal
+#' @noRd
+prep_tab_deltas <- function(df, prec = 3) {
+  message("ic_table_deltas_pre")
+  p_cols <- grep("Delta", colnames(df))
+  # for each Peak...
+  out <- plyr::ldply(p_cols, function(j) {
+    plyr::ldply(split(df, interaction(df[,"Ratio method"], df[,"Zone [%]"], drop=TRUE)), function(x) {
+      tmp <- x[1, c("Ratio method","Zone [%]"), drop=FALSE]
+      tmp[,"Mean Delta"] <- mean(x[,j])
+      tmp[,"SD Delta"] <- sd(x[,j])
+      tmp[,"Peak"] <- gsub("[^[:digit:]]", "", colnames(x)[j])
+      return(tmp)
+    }, .id = NULL)
+  }, .id = NULL)
+  out[,"Mean Delta"] <- round(out[,"Mean Delta"], 3)
+  out[,"SD Delta"] <- round(out[,"SD Delta"], 3)
+  # add per mille sign to colnames
+  colnames(out) <- gsub("Delta", "Delta [\u2030]", colnames(out))
+  out <- out[order(out[,"Peak"], out[,"Ratio method"], out[,"Zone [%]"]),]
+  return(out)
+}

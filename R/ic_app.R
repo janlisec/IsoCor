@@ -19,7 +19,6 @@
 #' @importFrom DT DTOutput renderDT JS
 #' @importFrom graphics abline axis box legend lines mtext par points segments
 #' @importFrom grDevices grey pdf dev.off
-#' @importFrom htmltools HTML tags h2 h3 h5 div strong em p img
 #' @importFrom MALDIquant transformIntensity smoothIntensity removeBaseline detectPeaks createMassSpectrum mass intensity
 #' @importFrom plyr ldply
 #' @importFrom shinyalert shinyalert
@@ -397,7 +396,6 @@ app_server <- function(input, output, session) {
   ic_mi_spectra_raw <- reactive({
     req(file_in(), input$ic_par_rt_col, input$ic_par_mi_col, cut_range$min, cut_range$max, rt_shift(), input$ic_par_app_method)
     if (input$ic_par_app_method=="IDMS") req(IDMS_data())
-    #browser()
     message("ic_mi_spectra_raw")
     get_spectrum(
       data = if (input$ic_par_app_method=="IDMS") IDMS_data() else file_in(), 
@@ -413,7 +411,13 @@ app_server <- function(input, output, session) {
     req(file_in(), input$ic_par_rt_col, input$ic_par_si_col, cut_range$min, rt_shift())
     req(input$ic_par_app_method=="IR-Delta")
     message("ic_si_spectra_raw")
-    get_spectrum(data = file_in(), rt_col = input$ic_par_rt_col, int_col = input$ic_par_si_col, cut_range = shiny::reactiveValuesToList(cut_range), rt_shift = rt_shift())
+    get_spectrum(
+      data = file_in(), 
+      rt_col = input$ic_par_rt_col, 
+      int_col = input$ic_par_si_col, 
+      cut_range = shiny::reactiveValuesToList(cut_range), 
+      rt_shift = rt_shift()
+    )
   })
   
   # provide spectra based on processed raw data ----
@@ -571,27 +575,10 @@ app_server <- function(input, output, session) {
   # delta calculation in case of at least 3 input files ---
   ic_table_deltas_pre <- reactive({
     req(ic_table_ratios_pre())
-    validate(need(length(ic_si_spectra())>=3, message = "This view is only available if you uploaded at least 3 replicate measurements."))
-    validate(need(any(grep("Delta", colnames(ic_table_ratios_pre()))), "The ratio table does not contain a column of Delta values to be evaluated."))
-    message("ic_table_deltas_pre")
     df <- ic_table_ratios_pre()
-    p_cols <- grep("Delta", colnames(df))
-    # for each Peak...
-    out <- plyr::ldply(p_cols, function(j) {
-      plyr::ldply(split(df, interaction(df[,"Ratio method"], df[,"Zone [%]"], drop=TRUE)), function(x) {
-        tmp <- x[1, c("Ratio method","Zone [%]"), drop=FALSE]
-        tmp[,"Mean Delta"] <- mean(x[,j])
-        tmp[,"SD Delta"] <- sd(x[,j])
-        tmp[,"Peak"] <- gsub("[^[:digit:]]", "", colnames(x)[j])
-        return(tmp)
-      }, .id = NULL)
-    }, .id = NULL)
-    out[,"Mean Delta"] <- round(out[,"Mean Delta"], 3)
-    out[,"SD Delta"] <- round(out[,"SD Delta"], 3)
-    # add per mille sign to colnames
-    colnames(out) <- gsub("Delta", "Delta [\u2030]", colnames(out))
-    out <- out[order(out[,"Peak"], out[,"Ratio method"], out[,"Zone [%]"]),]
-    return(out)
+    validate(need(length(unique(df[,"Sample"]))>=3, message = "This view is only available if you uploaded at least 3 replicate measurements."))
+    validate(need(any(grep("Delta", colnames(df))), "The ratio table does not contain a column of Delta values to be evaluated."))
+    prep_tab_deltas(df = df, prec = 3)
   })
   
   # table of peaks of 'new sample' ----
