@@ -36,7 +36,14 @@
     "IsoCor": {
       "Package": "IsoCor",
       "Version": "0.2.6",
-      "Source": "unknown",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "janlisec",
+      "RemoteRepo": "IsoCor",
+      "RemoteRef": "main",
+      "RemoteSha": "27d9725234ee611b0ef3bdee9a242ffa272231e1",
+      "Remotes": "github::daattali/shinyalert",
       "Requirements": [
         "DT",
         "MALDIquant",
@@ -50,7 +57,7 @@
         "shinyalert",
         "shinyjs"
       ],
-      "Hash": "89a50ae437d140aa30c7da17f7242649"
+      "Hash": "c118143e3a44a9215771f25a08d50166"
     },
     "MALDIquant": {
       "Package": "MALDIquant",
@@ -985,9 +992,9 @@
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
-      "RemoteRepo": "shinyalert",
       "RemoteUsername": "daattali",
-      "RemoteRef": "HEAD",
+      "RemoteRepo": "shinyalert",
+      "RemoteRef": "master",
       "RemoteSha": "452b946f3ba9144cf45fa2f85f5857a815609db1",
       "Requirements": [
         "R",
@@ -996,7 +1003,7 @@
         "stats",
         "uuid"
       ],
-      "Hash": "27e52f2eb168540d30a16a66559464b8"
+      "Hash": "aea198633ab53480155065d83e554165"
     },
     "shinyjs": {
       "Package": "shinyjs",
