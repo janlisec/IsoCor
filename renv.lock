@@ -35,14 +35,8 @@
     },
     "IsoCor": {
       "Package": "IsoCor",
-      "Version": "0.2.4",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteUsername": "janlisec",
-      "RemoteRepo": "isocor",
-      "RemoteRef": "main",
-      "RemoteSha": "ca7cf9465929f819a60965690472e914a5246b42",
-      "RemoteHost": "api.github.com",
+      "Version": "0.2.6",
+      "Source": "unknown",
       "Requirements": [
         "DT",
         "MALDIquant",
@@ -50,14 +44,13 @@
         "bsplus",
         "config",
         "golem",
-        "htmltools",
         "markdown",
         "plyr",
         "shiny",
         "shinyalert",
         "shinyjs"
       ],
-      "Hash": "013d3bdfe7ae2a0cdc3563a6d462e107"
+      "Hash": "89a50ae437d140aa30c7da17f7242649"
     },
     "MALDIquant": {
       "Package": "MALDIquant",
