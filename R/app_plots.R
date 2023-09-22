@@ -21,7 +21,14 @@
 #'   mi_spec <- lapply(testdata, function(x) {
 #'     MALDIquant::createMassSpectrum(mass = x[,"Time"]/60, intensity = x[,"32S"]) 
 #'   })
+#'   si_spec <- lapply(testdata, function(x) {
+#'     MALDIquant::createMassSpectrum(mass = x[,"Time"]/60, intensity = x[,"34S"]) 
+#'   })
 #'   IsoCor:::ic_specplot(mi_spec=mi_spec)
+#'   IsoCor:::ic_specplot(
+#'     opt = c("overlay_mi", "overlay_legend", "overlay_si", "overlay_drift", "correct_drift"), 
+#'     mi_spec=mi_spec, si_spec=si_spec
+#'   )
 #' }
 #' @keywords internal
 #' @noRd
@@ -132,6 +139,17 @@ ic_specplot <- function(
 #' @param df data.frame containing delta values.
 #' @return An annotated plot of delta values.
 #' @keywords internal
+#' @examples 
+#' if (interactive()) {
+#'   df <- data.frame(
+#'    "Ratio method" = gl(n = 3, k = 4, labels = c("PBP","PAI","LRS")),
+#'    "Zone [%]" = rep(c(50,80,95,100), 3),
+#'    "Mean Delta" = rnorm(12),
+#'    "SD Delta" = rnorm(12),
+#'    check.names = FALSE
+#'   )
+#'   IsoCor:::ic_deltaplot(df = df)
+#' })
 #' @noRd
 ic_deltaplot <- function(df) {
   df <- df[is.finite(df[,grep("Mean Delta", colnames(df))]),]
