@@ -1,28 +1,26 @@
 Package: IsoCor
 Title: Analyze Isotope Ratios in a 'Shiny'-App
-Version: 0.2.6
-Date: 2023-09-22
+Version: 0.2.7
+Date: 2024-09-06
 Authors@R: person("Jan", "Lisec", , "jan.lisec@bam.de", role = c("aut", "cre"),
     comment = c(ORCID = "0000-0003-1220-2286"))
 Description: Analyzing Inductively Coupled Plasma - Mass Spectrometry
     (ICP-MS) measurement data to evaluate isotope ratios (IRs) is a
-    complex process.  The 'IsoCor' package facilitates this process and
+    complex process. The 'IsoCor' package facilitates this process and
     renders it reproducible by providing a function to run a 'Shiny'-App
-    locally in any web browser.  In this App the user can upload data
+    locally in any web browser. In this App the user can upload data
     files of various formats, select ion traces, apply peak detection and
-    perform calculation of IRs and delta values.  Results are provided as
+    perform calculation of IRs and delta values. Results are provided as
     figures and tables and can be exported. The App, therefore,
     facilitates data processing of ICP-MS experiments to quickly obtain
     optimal processing parameters compared to traditional 'Excel'
     worksheet based approaches. A more detailed description can be found
     in the corresponding article <https://doi.org/10.1039/D2JA00208F>. 
-    The most recent version of 'IsoCor' can be tested online at <https://bam.de/isocor>.
+    The most recent version of 'IsoCor' can be tested online at <https://apps.bam.de/shn00/IsoCor/>.
 License: GPL (>= 3)
 URL: https://github.com/janlisec/IsoCor
 Depends: 
     R (>= 3.50)
-Remotes:
-    github::daattali/shinyalert
 Imports: 
     bsplus,
     config,
@@ -32,7 +30,7 @@ Imports:
     markdown (>= 1.5.0),
     plyr,
     shiny,
-    shinyalert (>= 3.0.0.9000),
+    shinyalert (>= 3.1),
     shinyjs
 Suggests:
     shinytest2,
@@ -42,4 +40,4 @@ Encoding: UTF-8
 LazyData: true
 LazyDataCompression: bzip2
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2

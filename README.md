@@ -39,4 +39,4 @@ The app contains test-data sets for both workflows.
 ## Detailed documentation
 
 A publication for the IR workflow can be found [here](https://doi.org/10.1039/D2JA00208F). 
-A publication for the IDMS workflow is currently under review. 
+A publication for the IDMS workflow can be found [here](https://doi.org/10.1021/acs.analchem.3c03553). 

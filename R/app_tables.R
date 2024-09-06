@@ -121,7 +121,7 @@ style_tab_peaks <- function(data, IDMS = FALSE, sh) {
 style_tab_idms <- function(data, sh=975) {
   dt <- DT::datatable(
     data = data,
-    "extensions" = "Buttons",,
+    "extensions" = "Buttons",
     "options" = list(
       "server" = FALSE, 
       "dom"="Bt", 
