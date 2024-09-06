@@ -4,13 +4,13 @@ Delta table contains mean delta and standard deviation values calculated for the
 
 #### Explanation of the column names
 
--   *Ratio method*: name of the isotope ratio calculation method (PAI, PBP, or LRS)\
--   *Zone [%]*: peak zone used for the isotope ratio calculation\
--   *Mean Delta*: mean of delta\
--   *SD Delta*: standard deviation of delta\
--   *Peak*: ID of the sample peak; helpful when one run has several sample peaks \|
+-   *Ratio method*: name of the isotope ratio calculation method (PAI, PBP, or LRS)
+-   *Zone [%]*: peak zone used for the isotope ratio calculation
+-   *Mean Delta*: mean of delta
+-   *SD Delta*: standard deviation of delta
+-   *Peak*: ID of the sample peak; helpful when one run has several sample peaks
 
 #### Explanation of the buttons located above the table
 
--   *Copy*: to copy the entire table\
+-   *Copy*: to copy the entire table
 -   *Excel*: to save the table as Excel file

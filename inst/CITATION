@@ -1,5 +1,8 @@
 bibentry(
   bibtype  = "Article",
+  textVersion = "Tukhmetova, D., Lisec, J., Vogl, J. et al. Data processing made easy: standalone tool for automated calculation of isotope ratio from transient signals – IsoCor. J Anal At Spectrom (2022). https://doi.org/10.1039/D2JA00208F",
+  header  = "The IsoCor package implements a Shiny-App to process data genarated in ICP-MS measurements.",
+  footer  = "This open-source software implements academic research by the authors and co-workers. If you use it, please support the project by citing the appropriate journal article.",
   title    = "Data processing made easy: standalone tool for automated calculation of isotope ratio from transient signals – IsoCor",
   author   = c(
     person("Dariya", "Tukhmetova"),
@@ -13,4 +16,24 @@ bibentry(
   number   = 11,
   pages    = "2401-2409",
   doi      = "10.1039/D2JA00208F"
+)
+
+bibentry(
+  bibtype  = "Article",
+  textVersion = "Tukhmetova, D., Lisec, J., Vogl, J. et al. Development of an Online Isotope Dilution CE/ICP–MS Method for the Quantification of Sulfur in Biological Compounds. Anal Chem (2024). https://doi.org/10.1021/acs.analchem.3c03553",
+  header  = "The IsoCor package implements a Shiny-App to process data genarated in ICP-MS measurements.",
+  footer  = "This open-source software implements academic research by the authors and co-workers. If you use it, please support the project by citing the appropriate journal article.",
+  title    = "Development of an Online Isotope Dilution CE/ICP–MS Method for the Quantification of Sulfur in Biological Compounds",
+  author   = c(
+    person("Dariya", "Tukhmetova"),
+    person("Jan", "Lisec"),
+    person("Jochen", "Vogl"),
+    person("Björn", "Meermann")
+  ),
+  journal  = "Anal. Chem.",
+  year     = 2024,
+  volume   = 96,
+  number   = 8,
+  pages    = "3276-3283",
+  doi      = "10.1021/acs.analchem.3c03553"
 )

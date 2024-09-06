@@ -1,23 +1,29 @@
 ## Ratio table
 
-Ratio table contains isotope ratio and delta values calculated for each peak with three calculation methods (point by point PBP, linear regression slope LRS, peak area integration PAI) with user-selected zones of the peak.
+Ratio table contains isotope ratio and delta values calculated for each peak 
+with three calculation methods (point by point PBP, linear regression slope LRS, 
+peak area integration PAI) with user-selected zones of the peak.
 
 #### Explanation of the column names
 
--   *Sample*: ID of the sample, helpful when several files are uploaded\
--   *Isotopes*: ID of the detected peaks (number of peaks should be same when several files are uploaded)\
--   *BL method*: name of the selected baseline correction method\
--   *Ratio method*: name of the isotope ratio calculation method (PAI, PBP, or LRS)\
--   *Zone [%]*: peak zone used for the isotope ratio calculation\
--   *Ratio P(n) (type)*: isotope ratio value of the peak. n is ID/index of the peak, Type - type of the peak (standard or sample)\
--   *Points P(n) (type)*: number of points corresponding to the peak. n is ID/index of the peak, Type - type of the peak (standard or sample)\
--   *Delta*: delta values calculated according to standard-sample bracketing method; when several standard peaks are measured, then IsoCor uses average value
+-   *Sample*: ID of the sample, helpful when several files are uploaded.
+-   *Isotopes*: ID of the detected peaks (number of peaks should be same when 
+several files are uploaded).
+-   *BL method*: name of the selected baseline correction method.
+-   *Ratio method*: name of the isotope ratio calculation method (PAI, PBP, or LRS).
+-   *Zone [%]*: peak zone used for the isotope ratio calculation.
+-   *Ratio P(n) (type)*: isotope ratio value of the peak. `n` is ID/index of the 
+peak, peak `type` can be standard or sample.
+-   *Points P(n) (type)*: number of points corresponding to the peak.
+-   *Delta*: delta values calculated according to standard-sample bracketing 
+method; when several standard peaks are measured, then IsoCor uses average value.
 
 #### Explanation of the buttons located above the table
 
--   *Copy*: to copy the entire table\
--   *Excel*: to save the table as Excel file\
--   *add new zone*: select zone of the peak for isotope ratio calculation; by default IsoCor calculated isotope ratio with 100%, 95%, 90% and 80% zones to ease comparison and selection of the optimal zone\
+-   *Copy*: to copy the entire table
+-   *Excel*: to save the table as Excel file
+-   *add new zone*: select zone of the peak for isotope ratio calculation; by 
+default *IsoCor* calculated isotope ratio with 100%, 95%, 90% and 80% zones to ease comparison and selection of the optimal zone\
 -   *rem selected zone*: remove previously selected zone\
 -   *set coef*: enter coefficient for delta scaling, find detailed explanation below
 
