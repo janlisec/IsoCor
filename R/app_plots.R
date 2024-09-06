@@ -68,7 +68,7 @@ ic_specplot <- function(
     si <- intensity(mi_spec[[idx]])
     flt <- sm>=xrng[1] & sm<=xrng[2]
     lines(x = sm[flt], y = si[flt], col=cols[idx])
-    if ("overlay_si" %in% opt) {
+    if ("overlay_si" %in% opt && inherits(si_spec[[idx]], "MassSpectrum")) {
       lines(
         x = mass(si_spec[[idx]])[flt],
         y = intensity(si_spec[[idx]])[flt],
