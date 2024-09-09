@@ -72,17 +72,17 @@ style_tab_peaks <- function(data, IDMS = FALSE, sh) {
       filename = "Peaktable"
     ),
     list(
-      extend = "collection",
+      extend = "pdf",
       text = 'define mass bias correction',
       action = DT::JS("function ( e, dt, node, config ) { Shiny.setInputValue('ic_btn_mass_bias', 1, {priority: 'event'}); }")
     ),
     list(
-      extend = "collection",
+      extend = "pdf",
       text = 'change peak type',
       action = DT::JS("function ( e, dt, node, config ) { Shiny.setInputValue('ic_btn_peak_type', 1, {priority: 'event'}); }")
     ),
     list(
-      extend = "collection",
+      extend = "pdf",
       text = '<i class="fa fa-question"></i>',
       titleAttr = 'Get Help on table',
       action = DT::JS(paste0("function ( e, dt, node, config ) { Shiny.setInputValue('ic_help0", ifelse(IDMS, 9, 6), "', 1, {priority: 'event'}); }"))
@@ -98,10 +98,10 @@ style_tab_peaks <- function(data, IDMS = FALSE, sh) {
     "extensions" = "Buttons", 
     "options" = list(
       "server" = FALSE, 
-      "dom" = "Bfti", 
-      "autoWidth" = TRUE,
+      "dom" = "Bft", 
+      #"autoWidth" = TRUE,
       "paging" = FALSE,
-      "scrollY" = sh-570,
+      #"scrollY" = sh-570,
       "pageLength" = -1, 
       "buttons" = btn_list
     ), 
@@ -127,7 +127,7 @@ style_tab_idms <- function(data, sh=975) {
       "dom"="Bt", 
       "autoWidth" = TRUE,
       "paging" = FALSE,
-      "scrollY" = sh-570,
+      #"scrollY" = sh-570,
       "pageLength" = -1,
       "buttons" = list(
         list(

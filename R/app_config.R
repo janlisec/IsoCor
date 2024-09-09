@@ -44,7 +44,6 @@ get_golem_config <- function(
 #' @import shiny
 #' @importFrom golem add_resource_path activate_js favicon bundle_resources
 #' @importFrom shinyjs useShinyjs
-#' @importFrom bsplus use_bs_tooltip
 #' @noRd
 golem_add_external_resources <- function() {
   # prepare the app environment ----
@@ -59,7 +58,6 @@ golem_add_external_resources <- function() {
     golem::favicon(ico = "BAMLogo"),
     # Add here other external resources
     shinyjs::useShinyjs(),
-    bsplus::use_bs_tooltip(),
     # include JS to determine screen height (to ultimately adjust table heights)
     includeScript(app_sys("app/www/js/screen_height.js")),
     # include JS for setting up tracking via Matomo

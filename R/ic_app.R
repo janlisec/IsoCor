@@ -15,7 +15,6 @@
 #' @seealso \link{iso_ratio}
 #'
 #' @import shiny
-#' @importFrom bsplus use_bs_tooltip bs_embed_tooltip %>%
 #' @importFrom DT DTOutput renderDT JS
 #' @importFrom graphics abline axis box legend lines mtext par points segments
 #' @importFrom grDevices grey pdf dev.off
@@ -49,168 +48,158 @@ ic_app <- function(...) {
 # ================================
 # set up app UI ----
 app_ui <- function() {
-  shiny::tagList(
-    golem_add_external_resources(),
-    fluidPage(
-      title = "IsoCor",
-      fluidRow(
-        column(
-          width = 3,
-          id = "options_panel",
-          style="height: 100vh; background-color: #F5F5F5",
-          column(
-            width = 12,
-            shiny::div(
-              style = "position: fixed; top: 0px; left: 0px; width: 25%; height: 42px; background-color: #E7E7E7;",
-              shiny::div(
-                style = "position: relative; font-size: 20px; padding-left: 15px; padding-top: 10px; padding-bottom: 10px;", 
-                class = "verticalhorizontal",
-                img(src = "www/bam_logo_20pt.gif", position = "absolute", margin = "auto", alt="BAM Logo"),
-                strong("BAM"), em("IsoCor"),
-                div(style="float: right; margin-right: 15px; font-size: 18px", shiny::actionLink(inputId = "ic_help01", label = "Help"))
-              )
-            ),
-            fluidRow(
-              style = "margin-top: 57px",
-              shiny::h4(shiny::actionLink(inputId = "ic_help02", label = "Data")),
-              fluidRow(
-                column(width = 3, selectInput(inputId = "ic_par_libsource", label = "Data source", choices = list("testdata", "testdata_IDMS", "upload files"), selected = "testdata_IDMS")),
-                column(width = 3, radioButtons(inputId = "ic_par_app_method", label = "Method", choices = c("IR-Delta", "IDMS"), selected = "IDMS")),
-                column(width = 3, selectInput(inputId = "ic_par_inputformat", label = "File format", choices = list("exp", "icp", "data", "generic"), selected = "exp")),
-                column(width = 3, uiOutput(outputId = "ic_par_path_expfiles"))
-              ),
-              shiny::h4(shiny::actionLink(inputId = "ic_help03", label = "Import")),
-              fluidRow(
-                column(width = 6, selectInput(inputId = "ic_par_rt_col", label = "RT column", choices = c("")) %>% bs_embed_tooltip(title = "Select RT column.")),
-                column(width = 6, textInput(inputId = "ic_par_mi_rt_unit", label = "RT unit", value = "min"))
-              ),
-              fluidRow(
-                column(width = 4, selectInput(inputId = "ic_par_mi_col", label = "MI column", choices = c("")) %>% bs_embed_tooltip(title = "Select Master Isotope column.")),
-                column(width = 4, textInput(inputId = "ic_par_mi_col_name", label = "MI Name")),
-                column(width = 4, numericInput(inputId = "ic_par_mi_amu", label = "MI amu", value = 0, step = 0.0001))
-              ),
-              fluidRow(
-                column(width = 4, selectInput(inputId = "ic_par_si_col", label = "SI column", choices = c("")) %>% bs_embed_tooltip(title = "Select Secondary Isotope column.")),
-                column(width = 4, textInput(inputId = "ic_par_si_col_name", label = "SI Name")),
-                column(width = 4, numericInput(inputId = "ic_par_si_amu", label = "SI amu", value = 0, step = 0.0001))
-              ),
-              shiny::div(id = "IDMS_par_section",
-                shiny::h4(shiny::actionLink(inputId = "ic_help10", label = "IDMS Parameters")),
-                fluidRow(
-                  column(width = 4, numericInput(inputId = "ic_par_IDMS_f", label = "IDMS f-value", value = 0.8876311)),
-                  column(width = 4, selectInput(inputId = "ic_par_IDMS_mb_method", label = "Mass bias method", choices = c("none","Linear","Russel","Exponential"), selected = "Russel")),
-                  column(width = 4, numericInput(inputId = "ic_par_IDMS_halfWindowSize", label = "Smoothing", value = 100, min=0, max=100, step=1))
-                ),
-                shiny::h5("Sample related Parameters"),
-                fluidRow(
-                  column(width = 4, numericInput(inputId = "ic_par_IR_sample", label = "Abund. SI", value = 0.0425)),
-                  column(width = 4, numericInput(inputId = "ic_par_Abund_MI", label = "Abund. MI", value = 0.9499)),
-                  column(width = 4, numericInput(inputId = "ic_par_Inj_Amount", label = "Inj. amount", value = 0.0205))
-                ),
-                shiny::h5("Spike related Parameters"),
-                fluidRow(
-                  column(width = 4, numericInput(inputId = "ic_par_IR_spike", label = "Abund. MI", value = 0.002)),
-                  column(width = 4, numericInput(inputId = "ic_par_Abund_SI", label = "Abund. SI", value = 0.998)),
-                  column(width = 4, numericInput(inputId = "ic_par_MF_Spike", label = "MF", value = 4.78881))
-                )
-              ),
-              shiny::div(id = "Processing_par_section",
-                shiny::h4(shiny::actionLink(inputId = "ic_help04", label = "Processing")),
-                fluidRow(
-                  column(width = 4, numericInput(inputId = "ic_par_halfWindowSize", label = "Smoothing", value = 25, min=0, max=100, step=1) %>% bs_embed_tooltip(title = "Smoothing parameter: 'half window size' of peak. Set to '0' to omit this processing step.")),
-                  column(width = 4, selectInput(inputId = "ic_par_baseline_method", label = "Baseline Correction", choices = c("none", "SNIP", "TopHat", "ConvexHull", "median"), selected = "SNIP") %>% bs_embed_tooltip(title = "Select method for baseline estimation or 'none' to omit this processing step.")),
-                  column(
-                    width = 4, 
-                    numericInput(inputId = "ic_par_peakpicking_SNR", label = "Peak Picking (SNR)", value = 25, min=1, max=100, step=1) %>% bs_embed_tooltip(title = "Peak picking parameter: 'Signal/Noise ratio' [range: 1..100]."),
-                    numericInput(inputId = "ic_par_peakpicking_k", label = "Peak Picking (k)", value = 3, min=3, max=7, step=1) %>% bs_embed_tooltip(title = "Peak picking parameter: 'Peak border min count' [range: 3..7]."),
-                    checkboxInput(inputId = "ic_par_peakpicking_noise", label = "Peak Picking (noise)", value = TRUE) %>% bs_embed_tooltip(title = "Peak picking parameter: 'use noise cutoff' [TRUE/FALSE].")
-                  ),
-                )
-              )
-            )
-          ),
-          div(
-            style = "position: fixed; bottom: 0px; left: 0px; width: 25%; height: 38px; background-color: #E7E7E7;",
-            div(style = "padding-left: 15px; padding-top: 10px; padding-bottom: 10px;", app_status_line())
-          )
+  
+  # components
+  main_menu_ui <- shiny::tagList(
+    shiny::div(
+      bslib::card(
+        bslib::card_header(
+          shiny::actionLink(inputId = "ic_help02", label = "Data"),
         ),
-        # main panel
-        column(
-          width = 9,
-          id = "main_panel",
-          shiny::div(
-            id = "ic_plotarea_IR",
-            fluidRow(
-              column(
-                width = 10,
-                div(style="position: fixed; top: 10px; background-color: orange; width: 20px; text-align: center;", actionLink("sidebar_button", "", icon = icon("angle-left"), style="text-align: center")),
-                plotOutput(
-                  outputId = "ic_specplot", 
-                  height = "400px", 
-                  dblclick = dblclickOpts(id = "ic_specplot_dblclick"), 
-                  brush = brushOpts(id = "ic_specplot_brush", direction = "x", resetOnNew = TRUE)
-                ) %>% bs_embed_tooltip(title = "You may select a time range [Click and Drag] with the cursor to zoom. Use [Double Click] to unzoom.", placement = "bottom")
-              ),
-              column(
-                width = 2,
-                style="height: 400px; background-color: #F5F5F5",
-                shiny::column(
-                  width=12, p(),
-                  selectInput(inputId = "ic_par_focus_sample", label = "Focus sample", choices = list("Sample 1"=1)),
-                  checkboxGroupInput(
-                    inputId = "ic_par_specplot", 
-                    label = shiny::actionLink(inputId = "ic_help05", label = "Plot options"),
-                    choices = list(
-                      "show all samples" = "overlay_mi",
-                      "show peak boundaries"="overlay_pb",
-                      "show sample IDs" = "overlay_legend",
-                      "overlay SI trace" = "overlay_si",
-                      "overlay ratio points" = "overlay_drift",
-                      "correct ratio points" = "correct_drift"
-                    ), 
-                    selected = c("overlay_pb","overlay_mi","overlay_drift")
-                  ),
-                  fluidRow(
-                    actionButton(inputId = "ic_par_cut_range", label = "cut range", width='45%') %>% bs_embed_tooltip(title = "Cut samples to currently visible range."),
-                    actionButton(inputId = "ic_par_align_rt", label = "align rt", width='45%') %>% bs_embed_tooltip(title = "Align samples at peak maxima.")
-                  ),
-                  fluidRow(
-                    actionButton(inputId = "ic_par_set_drift", label = "filter points", width='45%') %>% bs_embed_tooltip(title = "Set upper and lower quantile to filter depicted ratio points.")
-                  )
-                )
-              )
-            )
+        bslib::layout_column_wrap(width = 120,
+          radioButtons(inputId = "ic_par_libsource", label = "Data source", choices = c("Testdata", "Upload files"), selected = "Testdata"),
+          radioButtons(inputId = "ic_par_app_method", label = "Method", choices = c("IR-Delta", "IDMS"), selected = "IDMS"),
+          selectInput(inputId = "ic_par_inputformat", label = "File format", choices = list("exp", "icp", "data", "generic"), selected = "exp")
+        ),
+        uiOutput(outputId = "ic_par_path_expfiles")
+      ),
+      bslib::card(
+        bslib::card_header(shiny::actionLink(inputId = "ic_help03", label = "Import")),
+        bslib::layout_column_wrap(width = 120,
+          selectInput(inputId = "ic_par_rt_col", label = "RT column", choices = c("")) |> bslib::tooltip("Select RT column."),
+          textInput(inputId = "ic_par_mi_rt_unit", label = "RT unit", value = "min"),
+          shiny::HTML(""),
+          selectInput(inputId = "ic_par_mi_col", label = "MI column", choices = c("")) |> bslib::tooltip("Select Master Isotope column."),
+          textInput(inputId = "ic_par_mi_col_name", label = "MI Name"),
+          numericInput(inputId = "ic_par_mi_amu", label = "MI amu", value = 0, step = 0.0001),
+          selectInput(inputId = "ic_par_si_col", label = "SI column", choices = c("")) |> bslib::tooltip("Select Secondary Isotope column."),
+          textInput(inputId = "ic_par_si_col_name", label = "SI Name"),
+          numericInput(inputId = "ic_par_si_amu", label = "SI amu", value = 0, step = 0.0001)
+        )
+      ),
+      bslib::card(
+        id = "IDMS_par_section",
+        bslib::card_header(shiny::actionLink(inputId = "ic_help10", label = "IDMS Parameters")),
+        bslib::layout_column_wrap(width = 120,
+          numericInput(inputId = "ic_par_IDMS_f", label = "IDMS f-value", value = 0.8876311),
+          selectInput(inputId = "ic_par_IDMS_mb_method", label = "Mass bias", choices = c("none","Linear","Russel","Exponential"), selected = "Russel"),
+          numericInput(inputId = "ic_par_IDMS_halfWindowSize", label = "Smoothing", value = 100, min=0, max=100, step=1),
+        #shiny::h6("Sample related Parameters"),
+          numericInput(inputId = "ic_par_IR_sample", label = "Abund. SI", value = 0.0425),
+          numericInput(inputId = "ic_par_Abund_MI", label = "Abund. MI", value = 0.9499),
+          numericInput(inputId = "ic_par_Inj_Amount", label = "Inj. amount", value = 0.0205),
+        #shiny::h6("Spike related Parameters"),
+          numericInput(inputId = "ic_par_IR_spike", label = "Abund. MI", value = 0.002),
+          numericInput(inputId = "ic_par_Abund_SI", label = "Abund. SI", value = 0.998),
+          numericInput(inputId = "ic_par_MF_Spike", label = "MF", value = 4.78881)
+        )
+      ),
+      bslib::card(
+        id = "Processing_par_section",
+        bslib::card_header(shiny::actionLink(inputId = "ic_help04", label = "Processing")),
+        bslib::layout_column_wrap(width = 120,
+          numericInput(inputId = "ic_par_halfWindowSize", label = "Smoothing", value = 25, min=0, max=100, step=1) |> bslib::tooltip("Smoothing parameter: 'half window size' of peak. Set to '0' to omit this processing step."),
+          selectInput(inputId = "ic_par_baseline_method", label = "BL Correction", choices = c("none", "SNIP", "TopHat", "ConvexHull", "median"), selected = "SNIP") |> bslib::tooltip("Select method for baseline estimation or 'none' to omit this processing step."),
+          shiny::HTML(""),
+          numericInput(inputId = "ic_par_peakpicking_SNR", label = "Peak (SNR)", value = 25, min=1, max=100, step=1) |> bslib::tooltip("Peak picking parameter: 'Signal/Noise ratio' [range: 1..100]."),
+          numericInput(inputId = "ic_par_peakpicking_k", label = "Peak (k)", value = 3, min=3, max=7, step=1) |> bslib::tooltip("Peak picking parameter: 'Peak border min count' [range: 3..7]."),
+          checkboxInput(inputId = "ic_par_peakpicking_noise", label = "Peak (noise)", value = TRUE) |> bslib::tooltip("Peak picking parameter: 'use noise cutoff' [TRUE/FALSE].")
+        )
+      )
+    ),
+    bslib::card_footer(class = "d-flex justify-content-bottom", app_status_line())
+    # shiny::div(
+    #   #class="mt-auto p-2 bd-highlight",
+    #   shiny::hr(),
+    #   app_status_line()
+    # )
+  )
+  
+  ic_plot_card <- bslib::card(
+    id = "ic_plot_card",
+    min_height = "450px",
+    bslib::card_body(padding = 0, style = "resize: vertical;",
+      bslib::layout_sidebar(
+        sidebar = bslib::sidebar(
+          position = "right", open = "open", width = "280px", gap = "10px",
+          selectInput(inputId = "ic_par_focus_sample", label = "Focus sample", choices = list("Sample 1"=1)),
+          checkboxGroupInput(
+            inputId = "ic_par_specplot", 
+            label = shiny::actionLink(inputId = "ic_help05", label = "Plot options"),
+            choices = list(
+              "show all samples" = "overlay_mi",
+              "show peak boundaries"="overlay_pb",
+              "show sample IDs" = "overlay_legend",
+              "overlay SI trace" = "overlay_si",
+              "overlay ratio points" = "overlay_drift",
+              "correct ratio points" = "correct_drift"
+            ), 
+            selected = c("overlay_pb", "overlay_mi", "overlay_drift")
           ),
-          # shiny::div(
-          #   id = "ic_plotarea_IDMS",
-          #   plotOutput(outputId = "ic_plot_idms", height = "400px")
-          # ),
-          tabsetPanel(
-            id="ic_tabPanel_tables",
-            # tabPanel(
-            #   title = "IDMS", p(""),
-            #   DT::DTOutput("ic_table_IDMS")
-            # ),
-            tabPanel(
-              title = "Peak table", p(""),
-              DT::DTOutput("ic_table_peaks")
-            ),
-            tabPanel(
-              title = "Ratio table", p(""),
-              DT::DTOutput("ic_table_ratios")
-            ),
-            tabPanel(
-              title = "Delta table", p(""),
-              fluidRow(
-                column(width = 8, DT::DTOutput("ic_table_deltas")),
-                column(width = 4, plotOutput(outputId = "ic_deltaplot2", height = "400px"))
-              )
-            )
+          actionButton(inputId = "ic_par_cut_range", label = "cut range") |> bslib::tooltip("Cut samples to currently visible range."),
+          actionButton(inputId = "ic_par_align_rt", label = "align rt") |> bslib::tooltip("Align samples at peak maxima."),
+          actionButton(inputId = "ic_par_set_drift", label = "filter points") |> bslib::tooltip("Set upper and lower quantile to filter depicted ratio points.")
+        ),
+        plotOutput(
+          outputId = "ic_specplot", 
+          #height = "400px", 
+          dblclick = dblclickOpts(id = "ic_specplot_dblclick"), 
+          brush = brushOpts(id = "ic_specplot_brush", direction = "x", resetOnNew = TRUE)
+        ) |> bslib::tooltip("You may select a time range [Click and Drag] with the cursor to zoom. Use [Double Click] to unzoom.", placement = "bottom")
+      )
+    )
+  )
+  
+  ic_tables_card <- bslib::card(
+    id = "ic_tables_card",
+    bslib::card_body(
+      tabsetPanel(
+        id="ic_tabPanel_tables",
+        tabPanel(
+          title = "Peak table", p(""),
+          DT::DTOutput("ic_table_peaks")
+        ),
+        tabPanel(
+          title = "Ratio table", p(""),
+          DT::DTOutput("ic_table_ratios")
+        ),
+        tabPanel(
+          title = "Delta table", p(""),
+          bslib::layout_column_wrap(
+            DT::DTOutput("ic_table_deltas"),
+            plotOutput(outputId = "ic_deltaplot2")
           )
         )
       )
     )
   )
+  
+  shiny::tagList(
+    golem_add_external_resources(),
+    bslib::page_sidebar(
+      sidebar = bslib::sidebar(
+        position = "left", open = "open", width = "520px",
+        shiny::div(
+          class = "d-flex justify-content-between flex-column",
+          main_menu_ui
+        )
+      ),
+      ic_plot_card,
+      ic_tables_card,
+      title = bslib::card_title(
+        style = "width: 100%;",
+        shiny::div(
+          class = "d-flex justify-content-between",
+          shiny::div(
+            img(src = "www/bam_logo_20pt.gif", alt="BAM Logo"),
+            strong("BAM"), em("IsoCor"),
+          ),
+          shiny::actionLink(inputId = "ic_help01", label = NULL, icon = shiny::icon(name = "question"))
+        )
+      )
+    )
+  )
+  
 }
 # ================================
 
@@ -298,7 +287,7 @@ app_server <- function(input, output, session) {
     req(input$ic_par_libsource)
     message("file_in")
     out <- NULL
-    if (input$ic_par_libsource=="upload files") {
+    if (input$ic_par_libsource=="Upload files") {
       if (!is.null(input$ic_par_path_expfiles_inner)) {
         out <- try(lapply(input$ic_par_path_expfiles_inner$datapath, function(x) {
           read_raw_data(path=x, format=input$ic_par_inputformat)
@@ -312,15 +301,15 @@ app_server <- function(input, output, session) {
         out <- NULL
       }
     } else {
-      if (input$ic_par_libsource=="testdata") {
-        updateSelectInput(inputId = "ic_par_inputformat", selected="exp")
-        updateRadioButtons(inputId = "ic_par_app_method", selected="IR-Delta")
-        out <- testdata
-      }
-      if (input$ic_par_libsource=="testdata_IDMS") {
-        updateSelectInput(inputId = "ic_par_inputformat", selected="generic")
-        updateRadioButtons(inputId = "ic_par_app_method", selected="IDMS")
-        out <- testdata_IDMS
+      if (input$ic_par_libsource=="Testdata") {
+        if (input$ic_par_app_method == "IR-Delta") {
+          updateSelectInput(inputId = "ic_par_inputformat", selected="exp")
+          out <- testdata
+        }
+        if (input$ic_par_app_method == "IDMS") {
+          updateSelectInput(inputId = "ic_par_inputformat", selected="generic")
+          out <- testdata_IDMS
+        }
       }
     }
     if (!is.null(out)) {
@@ -561,7 +550,7 @@ app_server <- function(input, output, session) {
     shinyalert::shinyalert(
       html = TRUE,
       text = tagList(
-        numericInput(inputId = "ic_par_coef", label = "Add 'coef' to normalize delta", value = current_coef(), min=0.9, max=1.1, step=0.0001) %>% bs_embed_tooltip(title = "Define coef parameter for delta calculation.")
+        numericInput(inputId = "ic_par_coef", label = "Add 'coef' to normalize delta", value = current_coef(), min=0.9, max=1.1, step=0.0001) |> bslib::tooltip("Define coef parameter for delta calculation.")
       ),
       cancelButtonText = "Cancel", confirmButtonText = "Set", showCancelButton = TRUE, size = "xs",
       callbackR = function(value) {
@@ -611,8 +600,8 @@ app_server <- function(input, output, session) {
   
   # show fileUpload only when data source is set to 'upload files' ----
   observeEvent(input$ic_par_libsource, {
-    toggle(id = "ic_par_path_expfiles", condition = input$ic_par_libsource=="upload files")
-    toggle(id = "ic_par_inputformat", condition = input$ic_par_libsource=="upload files")
+    toggle(id = "ic_par_path_expfiles", condition = input$ic_par_libsource=="Upload files")
+    toggle(id = "ic_par_inputformat", condition = input$ic_par_libsource=="Upload files")
   })
   
   # reset time windows (upon new data or new RT column)
@@ -731,8 +720,8 @@ app_server <- function(input, output, session) {
         fluidRow(
           div(style = "margin-bottom: 5px", fluidRow(column(12, strong("Points filter (lower/upper quantile)")))),
           fluidRow(
-            column(width = 6, align = "center", numericInput(inputId = "ic_par_quant_low", label = NULL, value = current_drift_filter()[1], min=0, max=0.25, step=0.01, width="90%") %>% bs_embed_tooltip(title = "Define lower quantile parameter to limit depicted drift value distribution.")),
-            column(width = 6, align = "center", numericInput(inputId = "ic_par_quant_high", label = NULL, value = current_drift_filter()[2], min=0.75, max=1, step=0.01, width="90%") %>% bs_embed_tooltip(title = "Define upper quantile parameter to limit depicted drift value distribution."))
+            column(width = 6, align = "center", numericInput(inputId = "ic_par_quant_low", label = NULL, value = current_drift_filter()[1], min=0, max=0.25, step=0.01, width="90%") |> bslib::tooltip("Define lower quantile parameter to limit depicted drift value distribution.")),
+            column(width = 6, align = "center", numericInput(inputId = "ic_par_quant_high", label = NULL, value = current_drift_filter()[2], min=0.75, max=1, step=0.01, width="90%") |> bslib::tooltip("Define upper quantile parameter to limit depicted drift value distribution."))
           )
         )
       ),
@@ -758,7 +747,7 @@ app_server <- function(input, output, session) {
       html = TRUE,
       text = tagList(
         fluidRow(
-          column(width = 6, selectInput(inputId = "ic_par_mb_method", label = "Mass bias method", choices = c("none","Linear","Russel","Exponential"), selected = current_mb_method()) %>% bs_embed_tooltip(title = "Select mass bias method.")),
+          column(width = 6, selectInput(inputId = "ic_par_mb_method", label = "Mass bias method", choices = c("none","Linear","Russel","Exponential"), selected = current_mb_method()) |> bslib::tooltip("Select mass bias method.")),
           column(
             width = 6, 
             shiny::textAreaInput(
@@ -849,7 +838,7 @@ app_server <- function(input, output, session) {
   # [ToDo] Check if the observers should be combined in one observe statement
   update_k <- function() {
     #message("update k in peak table")
-    isolate({
+    shiny::isolate({
       tmp <- ic_table_peaks_edit()
       if (nrow(tmp)>=1) { 
         if (current_mb_method()=="none") {
@@ -879,16 +868,16 @@ app_server <- function(input, output, session) {
   })
   
   # collapse the options side bar to make space for figure and tables output
-  observeEvent(input$sidebar_button, {
-    shinyjs::toggle(id = "options_panel")
-    shinyjs::toggleClass("main_panel", "col-sm-9")
-    shinyjs::toggleClass("main_panel", "col-sm-12")
-    if (input$sidebar_button%%2 == 1) {
-      shiny::updateActionLink(inputId = "sidebar_button", icon = shiny::icon("angle-right"))
-    } else {
-      shiny::updateActionLink(inputId = "sidebar_button", icon = shiny::icon("angle-left"))
-    }
-  })
+  # observeEvent(input$sidebar_button, {
+  #   shinyjs::toggle(id = "options_panel")
+  #   shinyjs::toggleClass("main_panel", "col-sm-9")
+  #   shinyjs::toggleClass("main_panel", "col-sm-12")
+  #   if (input$sidebar_button%%2 == 1) {
+  #     shiny::updateActionLink(inputId = "sidebar_button", icon = shiny::icon("angle-right"))
+  #   } else {
+  #     shiny::updateActionLink(inputId = "sidebar_button", icon = shiny::icon("angle-left"))
+  #   }
+  # })
   
   # adjust UI to current device height in pixel
   observe({
@@ -906,10 +895,10 @@ app_server <- function(input, output, session) {
       "extensions" = "Buttons", 
       "options" = list(
         "server" = FALSE, 
-        "dom"="Bfti", 
+        "dom"="Bft", 
         "autoWidth" = TRUE,
         "paging" = FALSE,
-        "scrollY" = screen_height()-570,
+        #"scrollY" = screen_height()-570,
         "pageLength" = -1, 
         "buttons" = list(
           list(
@@ -927,7 +916,7 @@ app_server <- function(input, output, session) {
             filename = "Ratiotable"
           ),
           list(
-            extend = "collection",
+            extend = "pdf",
             text = 'add new zone',
             action = DT::JS(
               "function ( e, dt, node, config ) {
@@ -935,7 +924,7 @@ app_server <- function(input, output, session) {
               }")
           ),
           list(
-            extend = "collection",
+            extend = "pdf",
             text = 'rem selected zone',
             action = DT::JS(
               "function ( e, dt, node, config ) {
@@ -943,7 +932,7 @@ app_server <- function(input, output, session) {
               }")
           ),
           list(
-            extend = "collection",
+            extend = "pdf",
             text = 'set coef',
             action = DT::JS(
               "function ( e, dt, node, config ) {
@@ -951,7 +940,7 @@ app_server <- function(input, output, session) {
               }")
           ),
           list(
-            extend = "collection",
+            extend = "pdf",
             text = '<i class="fa fa-question"></i>',
             titleAttr = 'Get Help on table',
             action = DT::JS(
@@ -977,10 +966,10 @@ app_server <- function(input, output, session) {
       "extensions" = "Buttons", 
       "options" = list(
         "server" = FALSE, 
-        "dom"="Bfti", 
+        "dom"="Bft", 
         "autoWidth" = TRUE,
         "paging" = FALSE,
-        "scrollY" = screen_height()-570,
+        #"scrollY" = screen_height()-570,
         "pageLength" = -1, 
         "buttons" = list(
           list(
@@ -998,7 +987,7 @@ app_server <- function(input, output, session) {
             filename = "Deltatable"
           ),
           list(
-            extend = 'collection',
+            extend = 'pdf',
             text = '<i class="fa fa-question"></i>',
             titleAttr = 'Get Help on table',
             action = DT::JS(
