@@ -15,7 +15,7 @@ Mass-spectrometry (ICP-MS) analyses using a dedicated `Shiny`-App.
 Two workflows are supported for isotope ratio (IR) and isotope dilution (ID) 
 calculation.
 
-You can access and test the app without local installation at [www.bam.de/IsoCor](https://www.bam.de/IsoCor).
+You can access and test the app without local installation at [www.bam.de/IsoCor](https://apps.bam.de/shn00/IsoCor/).
 
 ## Installation
 

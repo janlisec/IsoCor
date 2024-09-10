@@ -10,7 +10,8 @@ ic_app(...)
 \item{...}{Options passed to golem::with_golem_options.}
 }
 \value{
-A shiny app object. This will effectively launch a browser and start the app on local port 7462.
+A shiny app object. This will effectively launch a browser and start
+the app on local port 7462.
 }
 \description{
 \code{ic_app} will start a shiny app that allows to upload raw
@@ -19,9 +20,6 @@ between two intensity traces.
 }
 \details{
 The app is described in detail in \doi{10.1039/D2JA00208F}.
-}
-\references{
-\url{https://jali.shinyapps.io/IsoCor}
 }
 \seealso{
 \link{iso_ratio}

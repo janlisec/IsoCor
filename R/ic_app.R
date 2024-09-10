@@ -8,9 +8,8 @@
 #' 
 #' @details The app is described in detail in \doi{10.1039/D2JA00208F}.
 #'
-#' @references \url{https://jali.shinyapps.io/IsoCor}
-#'
-#' @return A shiny app object. This will effectively launch a browser and start the app on local port 7462. 
+#' @return A shiny app object. This will effectively launch a browser and start 
+#'   the app on local port 7462.
 #'
 #' @seealso \link{iso_ratio}
 #'
