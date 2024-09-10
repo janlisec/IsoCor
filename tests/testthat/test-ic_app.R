@@ -44,13 +44,14 @@ testthat::test_that(
 	  
 	  # check if IDMS test data are loaded upon click
 	  app$set_inputs(ic_par_libsource = "Testdata")
-	  file_in <- shiny::isolate(app$get_values(export = "file_in")$export$file_in())
-	  testthat::expect_equal(file_in, IsoCor::testdata_IDMS)
-
-	  # check if test data switch to IR set upon click
 	  app$set_inputs(ic_par_app_method = "IR-Delta")
 	  file_in <- shiny::isolate(app$get_values(export = "file_in")$export$file_in())
 	  testthat::expect_equal(file_in, IsoCor::testdata)
+	  
+	  # check if test data switch to IR set upon click
+	  app$set_inputs(ic_par_app_method = "IDMS")
+	  file_in <- shiny::isolate(app$get_values(export = "file_in")$export$file_in())
+	  testthat::expect_equal(file_in, IsoCor::testdata_IDMS)
 	  
 	}
 )

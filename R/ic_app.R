@@ -252,7 +252,7 @@ app_server <- function(input, output, session) {
   # initial mass bias method
   current_mb_method <- reactiveVal("none")
   # return current screen height to adjust table height
-  screen_height <- reactiveVal(960)
+  #screen_height <- reactiveVal(960)
   
   ### show/hide section ##################################################----
   # modify UI depending on workflow (IR-Delta or IDMS)
@@ -732,7 +732,7 @@ app_server <- function(input, output, session) {
   output$ic_table_peaks <- DT::renderDT({
     req(ic_table_peaks_edit())
     message("output$ic_table_peaks")
-    style_tab_peaks(data = ic_table_peaks_edit(), IDMS = input$ic_par_app_method=="IDMS", sh = screen_height())
+    style_tab_peaks(data = ic_table_peaks_edit(), IDMS = input$ic_par_app_method=="IDMS")
   })
   
   # apply mass bias correction using table action button
@@ -847,8 +847,7 @@ app_server <- function(input, output, session) {
     ic_table_peaks_edit(tmp)
   }
   shiny::observeEvent(ic_table_peaks_edit(), {
-    # [ToDo] maybe switch off for IDMS
-    #input$ic_par_app_method=="IDMS"
+    # switch off for IDMS
     req(input$ic_par_app_method!="IDMS")
     update_k()
   })
@@ -862,6 +861,7 @@ app_server <- function(input, output, session) {
   })
   
   # collapse the options side bar to make space for figure and tables output
+  # collapsing was deprecated in version 0.2.8 by switching to bslib layout
   # observeEvent(input$sidebar_button, {
   #   shinyjs::toggle(id = "options_panel")
   #   shinyjs::toggleClass("main_panel", "col-sm-9")
@@ -874,129 +874,25 @@ app_server <- function(input, output, session) {
   # })
   
   # adjust UI to current device height in pixel
-  observe({
-    invalidateLater(3000)
-    if (!identical(input$CurrentScreenHeight, screen_height())) {
-      screen_height(input$CurrentScreenHeight)
-    }
-  })
+  # evaluating screen_height was deprecated in version 0.2.8 by switching to bslib layout
+  # observe({
+  #   invalidateLater(3000)
+  #   if (!identical(input$CurrentScreenHeight, screen_height())) {
+  #     screen_height(input$CurrentScreenHeight)
+  #   }
+  # })
   
   # ratio(s) table ----
   output$ic_table_ratios <- DT::renderDT({
     message("output$ic_table_ratios")
-    dt <- DT::datatable(
-      data = ic_table_ratios_pre(),
-      "extensions" = "Buttons", 
-      "options" = list(
-        "server" = FALSE, 
-        "dom"="Bft", 
-        "autoWidth" = TRUE,
-        "paging" = FALSE,
-        #"scrollY" = screen_height()-570,
-        "pageLength" = -1, 
-        "buttons" = list(
-          list(
-            extend = 'csv',
-            title = NULL,
-            text = '<i class="fa fa-file-csv"></i>',
-            titleAttr = 'Download table as .csv',
-            filename = "Ratiotable"
-          ),
-          list(
-            extend = 'excel',
-            title = NULL,
-            text = '<i class="fa fa-file-excel-o"></i>',
-            titleAttr = 'Download table as Excel',
-            filename = "Ratiotable"
-          ),
-          list(
-            extend = "pdf",
-            text = 'add new zone',
-            action = DT::JS(
-              "function ( e, dt, node, config ) {
-              Shiny.setInputValue('ic_btn_add_zone', 1, {priority: 'event'});
-              }")
-          ),
-          list(
-            extend = "pdf",
-            text = 'rem selected zone',
-            action = DT::JS(
-              "function ( e, dt, node, config ) {
-              Shiny.setInputValue('ic_btn_rem_zone', 1, {priority: 'event'});
-              }")
-          ),
-          list(
-            extend = "pdf",
-            text = 'set coef',
-            action = DT::JS(
-              "function ( e, dt, node, config ) {
-              Shiny.setInputValue('ic_btn_set_coef', 1, {priority: 'event'});
-              }")
-          ),
-          list(
-            extend = "pdf",
-            text = '<i class="fa fa-question"></i>',
-            titleAttr = 'Get Help on table',
-            action = DT::JS(
-              "function ( e, dt, node, config ) {
-              Shiny.setInputValue('ic_help07', 1, {priority: 'event'});
-              }")
-          )
-        )
-      ), 
-      "selection" = list(mode="single", target="row"), 
-      "rownames" = NULL
-    )
-    dt <- DT::formatCurrency(table = dt, columns = grep("Delta P", colnames(ic_table_ratios_pre())), digits = 3, currency="")
-    dt <- DT::formatCurrency(table = dt, columns = grep("Ratio P", colnames(ic_table_ratios_pre())), digits = 6, currency="")
-    return(dt)
+    style_tab_ratios(data = ic_table_ratios_pre())
   })
   
   # delta table ----
   output$ic_table_deltas <- DT::renderDT({
     message("output$ic_table_deltas")
-    dt <- DT::datatable(
-      data = ic_table_deltas_pre(),
-      "extensions" = "Buttons", 
-      "options" = list(
-        "server" = FALSE, 
-        "dom"="Bft", 
-        "autoWidth" = TRUE,
-        "paging" = FALSE,
-        #"scrollY" = screen_height()-570,
-        "pageLength" = -1, 
-        "buttons" = list(
-          list(
-            extend = 'csv',
-            title = NULL,
-            text = '<i class="fa fa-file-csv"></i>',
-            titleAttr = 'Download table as .csv',
-            filename = "Deltatable"
-          ),
-          list(
-            extend = 'excel',
-            title = NULL,
-            text = '<i class="fa fa-file-excel-o"></i>',
-            titleAttr = 'Download table as Excel',
-            filename = "Deltatable"
-          ),
-          list(
-            extend = 'pdf',
-            text = '<i class="fa fa-question"></i>',
-            titleAttr = 'Get Help on table',
-            action = DT::JS(
-              "function ( e, dt, node, config ) {
-              Shiny.setInputValue('ic_help08', 1, {priority: 'event'});
-              }")
-          )
-        )
-      ),
-      "selection" = list(mode="single", target="row"),  
-      "rownames" = NULL
-    )
-    dt <- DT::formatCurrency(table = dt, columns = grep("Delta", colnames(ic_table_deltas_pre())), digits = 3, currency="")
-    return(dt)
-  })  
+    style_tab_deltas(data = ic_table_deltas_pre())
+  })
   
   # spectrum plot ----
   output$ic_specplot <- shiny::renderPlot({

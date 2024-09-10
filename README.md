@@ -1,8 +1,3 @@
----
-title: "&nbsp;"
-title-meta: IsoCor package ReadMe
----
-
 # IsoCor
 
 <!-- badges: start -->

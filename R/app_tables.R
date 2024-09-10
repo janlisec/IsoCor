@@ -55,7 +55,14 @@ prep_tab_peaks <- function(p, s, mb = c("none","Linear","Russel","Exponential"))
   return(out)  
 }
 
-style_tab_peaks <- function(data, IDMS = FALSE, sh) {
+#' @title style_tab_peaks.
+#' @description \code{style_tab_peaks} will .
+#' @param data peak tab (works for both, IR and ID workflow).
+#' @param IDMS Set true for ID workflow.
+#' @return A datatable object.
+#' @keywords internal
+#' @noRd
+style_tab_peaks <- function(data, IDMS = FALSE) {
   btn_list <- list(
     list(
       extend = 'csv',
@@ -99,9 +106,8 @@ style_tab_peaks <- function(data, IDMS = FALSE, sh) {
     "options" = list(
       "server" = FALSE, 
       "dom" = "Bft", 
-      #"autoWidth" = TRUE,
+      "autoWidth" = TRUE,
       "paging" = FALSE,
-      #"scrollY" = sh-570,
       "pageLength" = -1, 
       "buttons" = btn_list
     ), 
@@ -114,11 +120,10 @@ style_tab_peaks <- function(data, IDMS = FALSE, sh) {
 #' @title style_tab_idms.
 #' @description \code{style_tab_idms} will .
 #' @param data IDMS tab.
-#' @param sh screen_height in px.
 #' @return A datatable object.
 #' @keywords internal
 #' @noRd
-style_tab_idms <- function(data, sh=975) {
+style_tab_idms <- function(data) {
   dt <- DT::datatable(
     data = data,
     "extensions" = "Buttons",
@@ -127,7 +132,6 @@ style_tab_idms <- function(data, sh=975) {
       "dom"="Bt", 
       "autoWidth" = TRUE,
       "paging" = FALSE,
-      #"scrollY" = sh-570,
       "pageLength" = -1,
       "buttons" = list(
         list(
@@ -226,6 +230,81 @@ prep_tab_ratios <- function(pks, mi_pks, mi_spc, si_spc, isos, bl_method, zones,
   return(out)
 }
 
+#' @title style_tab_ratios.
+#' @description \code{style_tab_ratios} will .
+#' @param data ratio tab.
+#' @return A datatable object.
+#' @keywords internal
+#' @noRd
+style_tab_ratios <- function(data) {
+  btn_list <- list(
+    list(
+      extend = 'csv',
+      title = NULL,
+      text = '<i class="fa fa-file-csv"></i>',
+      titleAttr = 'Download table as .csv',
+      filename = "Ratiotable"
+    ),
+    list(
+      extend = 'excel',
+      title = NULL,
+      text = '<i class="fa fa-file-excel-o"></i>',
+      titleAttr = 'Download table as Excel',
+      filename = "Ratiotable"
+    ),
+    list(
+      extend = "pdf",
+      text = 'add new zone',
+      action = DT::JS(
+        "function ( e, dt, node, config ) {
+              Shiny.setInputValue('ic_btn_add_zone', 1, {priority: 'event'});
+              }")
+    ),
+    list(
+      extend = "pdf",
+      text = 'rem selected zone',
+      action = DT::JS(
+        "function ( e, dt, node, config ) {
+              Shiny.setInputValue('ic_btn_rem_zone', 1, {priority: 'event'});
+              }")
+    ),
+    list(
+      extend = "pdf",
+      text = 'set coef',
+      action = DT::JS(
+        "function ( e, dt, node, config ) {
+              Shiny.setInputValue('ic_btn_set_coef', 1, {priority: 'event'});
+              }")
+    ),
+    list(
+      extend = "pdf",
+      text = '<i class="fa fa-question"></i>',
+      titleAttr = 'Get Help on table',
+      action = DT::JS(
+        "function ( e, dt, node, config ) {
+              Shiny.setInputValue('ic_help07', 1, {priority: 'event'});
+              }")
+    )
+  )
+  dt <- DT::datatable(
+    data = data,
+    "extensions" = "Buttons", 
+    "options" = list(
+      "server" = FALSE, 
+      "dom"="Bft", 
+      "autoWidth" = TRUE,
+      "paging" = FALSE,
+      "pageLength" = -1, 
+      "buttons" = btn_list
+    ), 
+    "selection" = list(mode="single", target="row"), 
+    "rownames" = NULL
+  )
+  dt <- DT::formatCurrency(table = dt, columns = grep("Delta P", colnames(data)), digits = 3, currency="")
+  dt <- DT::formatCurrency(table = dt, columns = grep("Ratio P", colnames(data)), digits = 6, currency="")
+  return(dt)
+}
+
 #' @title prep_tab_deltas.
 #' @param df ic_table_ratios_pre().
 #' @param prec Rounding precision for output columns `Mean Delta` and `SD Delta`.
@@ -252,3 +331,54 @@ prep_tab_deltas <- function(df, prec = 3) {
   out <- out[order(out[,"Peak"], out[,"Ratio method"], out[,"Zone [%]"]),]
   return(out)
 }
+
+#' @title style_tab_deltas.
+#' @description \code{style_tab_deltas} will .
+#' @param data delta tab.
+#' @return A datatable object.
+#' @keywords internal
+#' @noRd
+style_tab_deltas <- function(data) {
+  btn_list <- list(
+    list(
+      extend = 'csv',
+      title = NULL,
+      text = '<i class="fa fa-file-csv"></i>',
+      titleAttr = 'Download table as .csv',
+      filename = "Deltatable"
+    ),
+    list(
+      extend = 'excel',
+      title = NULL,
+      text = '<i class="fa fa-file-excel-o"></i>',
+      titleAttr = 'Download table as Excel',
+      filename = "Deltatable"
+    ),
+    list(
+      extend = 'pdf',
+      text = '<i class="fa fa-question"></i>',
+      titleAttr = 'Get Help on table',
+      action = DT::JS(
+        "function ( e, dt, node, config ) {
+              Shiny.setInputValue('ic_help08', 1, {priority: 'event'});
+              }")
+    )
+  )
+  dt <- DT::datatable(
+    data = data,
+    "extensions" = "Buttons", 
+    "options" = list(
+      "server" = FALSE, 
+      "dom"="Bft", 
+      "autoWidth" = TRUE,
+      "paging" = FALSE,
+      "pageLength" = -1, 
+      "buttons" = btn_list
+    ),
+    "selection" = list(mode="single", target="row"),  
+    "rownames" = NULL
+  )
+  dt <- DT::formatCurrency(table = dt, columns = grep("Delta", colnames(data)), digits = 3, currency="")
+  return(dt)
+}
+
