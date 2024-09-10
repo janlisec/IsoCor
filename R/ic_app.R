@@ -58,7 +58,7 @@ app_ui <- function() {
         ),
         bslib::layout_column_wrap(width = 120,
           radioButtons(inputId = "ic_par_libsource", label = "Data source", choices = c("Testdata", "Upload files"), selected = "Testdata"),
-          radioButtons(inputId = "ic_par_app_method", label = "Method", choices = c("IR-Delta", "IDMS"), selected = "IDMS"),
+          radioButtons(inputId = "ic_par_app_method", label = "Method", choices = c("IR-Delta", "IDMS"), selected = "IR-Delta"),
           selectInput(inputId = "ic_par_inputformat", label = "File format", choices = list("exp", "icp", "data", "generic"), selected = "exp")
         ),
         uiOutput(outputId = "ic_par_path_expfiles")
@@ -159,9 +159,9 @@ app_ui <- function() {
         ),
         tabPanel(
           title = "Delta table",
-          bslib::layout_column_wrap(
-            DT::DTOutput("ic_table_deltas"),
-            plotOutput(outputId = "ic_deltaplot2")
+          bslib::layout_column_wrap(width = "600px",
+            shiny::div(style = "width: 600px;", DT::DTOutput("ic_table_deltas")),
+            shiny::div(style = "width: 600px;", plotOutput(outputId = "ic_deltaplot2"))
           )
         )
       )
