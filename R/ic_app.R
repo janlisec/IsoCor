@@ -108,11 +108,6 @@ app_ui <- function() {
       )
     ),
     bslib::card_footer(class = "d-flex justify-content-bottom", app_status_line())
-    # shiny::div(
-    #   #class="mt-auto p-2 bd-highlight",
-    #   shiny::hr(),
-    #   app_status_line()
-    # )
   )
   
   ic_plot_card <- bslib::card(
@@ -141,8 +136,7 @@ app_ui <- function() {
           actionButton(inputId = "ic_par_set_drift", label = "filter points") |> bslib::tooltip("Set upper and lower quantile to filter depicted ratio points.")
         ),
         plotOutput(
-          outputId = "ic_specplot", 
-          #height = "400px", 
+          outputId = "ic_specplot",
           dblclick = dblclickOpts(id = "ic_specplot_dblclick"), 
           brush = brushOpts(id = "ic_specplot_brush", direction = "x", resetOnNew = TRUE)
         ) |> bslib::tooltip("You may select a time range [Click and Drag] with the cursor to zoom. Use [Double Click] to unzoom.", placement = "bottom")
@@ -156,15 +150,15 @@ app_ui <- function() {
       tabsetPanel(
         id="ic_tabPanel_tables",
         tabPanel(
-          title = "Peak table", p(""),
+          title = "Peak table", 
           DT::DTOutput("ic_table_peaks")
         ),
         tabPanel(
-          title = "Ratio table", p(""),
+          title = "Ratio table",
           DT::DTOutput("ic_table_ratios")
         ),
         tabPanel(
-          title = "Delta table", p(""),
+          title = "Delta table",
           bslib::layout_column_wrap(
             DT::DTOutput("ic_table_deltas"),
             plotOutput(outputId = "ic_deltaplot2")

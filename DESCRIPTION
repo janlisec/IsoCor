@@ -20,7 +20,7 @@ Description: Analyzing Inductively Coupled Plasma - Mass Spectrometry
 License: GPL (>= 3)
 URL: https://github.com/janlisec/IsoCor
 Depends: 
-    R (>= 4.10)
+    R (>= 4.1.0)
 Imports: 
     bslib,
     config,
