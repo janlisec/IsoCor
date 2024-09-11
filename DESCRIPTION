@@ -1,7 +1,7 @@
 Package: IsoCor
 Title: Analyze Isotope Ratios in a 'Shiny'-App
-Version: 0.2.8
-Date: 2024-09-09
+Version: 0.2.9
+Date: 2024-09-11
 Authors@R: person("Jan", "Lisec", , "jan.lisec@bam.de", role = c("aut", "cre"),
     comment = c(ORCID = "0000-0003-1220-2286"))
 Description: Analyzing Inductively Coupled Plasma - Mass Spectrometry (ICP-MS) 

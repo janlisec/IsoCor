@@ -35,19 +35,19 @@
     },
     "IsoCor": {
       "Package": "IsoCor",
-      "Version": "0.2.7",
+      "Version": "0.2.8",
       "Source": "GitHub",
       "RemoteType": "github",
-      "RemoteHost": "api.github.com",
       "RemoteUsername": "janlisec",
-      "RemoteRepo": "IsoCor",
+      "RemoteRepo": "isocor",
       "RemoteRef": "main",
-      "RemoteSha": "e75a92c8abc26e28c80d36c4a44ddc1585ace433",
+      "RemoteSha": "7e63f3c10f7c7b56a4b6a55c85d40b5060884bf8",
+      "RemoteHost": "api.github.com",
       "Requirements": [
         "DT",
         "MALDIquant",
         "R",
-        "bsplus",
+        "bslib",
         "config",
         "golem",
         "markdown",
@@ -56,7 +56,7 @@
         "shinyalert",
         "shinyjs"
       ],
-      "Hash": "4c88c7184f0bb00dbd3b9b23f16a0eb7"
+      "Hash": "2993f2f73bea2b7ef8ae888545662a07"
     },
     "MALDIquant": {
       "Package": "MALDIquant",
@@ -173,25 +173,6 @@
         "sass"
       ],
       "Hash": "b299c6741ca9746fb227debcb0f9fb6c"
-    },
-    "bsplus": {
-      "Package": "bsplus",
-      "Version": "0.1.4",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "glue",
-        "htmltools",
-        "jsonlite",
-        "lubridate",
-        "magrittr",
-        "methods",
-        "purrr",
-        "rmarkdown",
-        "stringr"
-      ],
-      "Hash": "2b1c662ff3624ddb37fcb07c6449e55b"
     },
     "cachem": {
       "Package": "cachem",
@@ -424,17 +405,6 @@
       ],
       "Hash": "15aeb8c27f5ea5161f9f6a641fafd93a"
     },
-    "generics": {
-      "Package": "generics",
-      "Version": "0.1.3",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "methods"
-      ],
-      "Hash": "15e9634c0fcd294799e9b2e929ed1b86"
-    },
     "globals": {
       "Package": "globals",
       "Version": "0.16.3",
@@ -626,19 +596,6 @@
         "rlang"
       ],
       "Hash": "b8552d117e1b808b09a832f589b79035"
-    },
-    "lubridate": {
-      "Package": "lubridate",
-      "Version": "1.9.3",
-      "Source": "Repository",
-      "Repository": "RSPM",
-      "Requirements": [
-        "R",
-        "generics",
-        "methods",
-        "timechange"
-      ],
-      "Hash": "680ad542fbcf801442c83a6ac5a2126c"
     },
     "magrittr": {
       "Package": "magrittr",
@@ -839,21 +796,6 @@
         "utils"
       ],
       "Hash": "878b467580097e9c383acbb16adab57a"
-    },
-    "purrr": {
-      "Package": "purrr",
-      "Version": "1.0.2",
-      "Source": "Repository",
-      "Repository": "RSPM",
-      "Requirements": [
-        "R",
-        "cli",
-        "lifecycle",
-        "magrittr",
-        "rlang",
-        "vctrs"
-      ],
-      "Hash": "1cba04a4e9414bdefc9dcaa99649a8dc"
     },
     "rappdirs": {
       "Package": "rappdirs",
@@ -1067,36 +1009,6 @@
       ],
       "Hash": "5f5a7629f956619d519205ec475fe647"
     },
-    "stringi": {
-      "Package": "stringi",
-      "Version": "1.8.4",
-      "Source": "Repository",
-      "Repository": "RSPM",
-      "Requirements": [
-        "R",
-        "stats",
-        "tools",
-        "utils"
-      ],
-      "Hash": "39e1144fd75428983dc3f63aa53dfa91"
-    },
-    "stringr": {
-      "Package": "stringr",
-      "Version": "1.5.1",
-      "Source": "Repository",
-      "Repository": "RSPM",
-      "Requirements": [
-        "R",
-        "cli",
-        "glue",
-        "lifecycle",
-        "magrittr",
-        "rlang",
-        "stringi",
-        "vctrs"
-      ],
-      "Hash": "960e2ae9e09656611e0b8214ad543207"
-    },
     "sys": {
       "Package": "sys",
       "Version": "3.4.2",
@@ -1151,17 +1063,6 @@
         "vctrs"
       ],
       "Hash": "a84e2cc86d07289b3b6f5069df7a004c"
-    },
-    "timechange": {
-      "Package": "timechange",
-      "Version": "0.3.0",
-      "Source": "Repository",
-      "Repository": "RSPM",
-      "Requirements": [
-        "R",
-        "cpp11"
-      ],
-      "Hash": "c5f3c201b931cd6474d17d8700ccb1c8"
     },
     "tinytex": {
       "Package": "tinytex",
