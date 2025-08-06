@@ -53,7 +53,7 @@ Afterwards you can start the app locally in your browser running:
 IsoCor::ic_app()
 ```
 
-![Screenshot IsoCor-App](man/figures/README-Screenshot.png?raw=true "Screenshot")
+![Screenshot IsoCor-App](dev/Screenshot.png?raw=true "Screenshot")
 
 The app contains test-data sets for both workflows, IR and ID. Measurement files
 can be uploaded in a number of different formats. Most parameters are explained 

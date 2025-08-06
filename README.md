@@ -46,7 +46,7 @@ IsoCor::ic_app()
 ```
 
 <figure>
-<img src="man/figures/README-Screenshot.png?raw=true" title="Screenshot"
+<img src="dev/Screenshot.png?raw=true" title="Screenshot"
 alt="Screenshot IsoCor-App" />
 <figcaption aria-hidden="true">Screenshot IsoCor-App</figcaption>
 </figure>
