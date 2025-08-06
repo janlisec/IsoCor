@@ -5,10 +5,10 @@
 #'  between two intensity traces.
 #'
 #' @param ... Options passed to golem::with_golem_options.
-#' 
+#'
 #' @details The app is described in detail in \doi{10.1039/D2JA00208F}.
 #'
-#' @return A shiny app object. This will effectively launch a browser and start 
+#' @return A shiny app object. This will effectively launch a browser and start
 #'   the app on local port 7462.
 #'
 #' @seealso \link{iso_ratio}
@@ -47,7 +47,7 @@ ic_app <- function(...) {
 # ================================
 # set up app UI ----
 app_ui <- function() {
-  
+
   # components
   main_menu_ui <- shiny::tagList(
     shiny::div(style = "display: flex; flex-direction: column; height: calc(100vh - 114px);",
@@ -58,7 +58,7 @@ app_ui <- function() {
           ),
           bslib::layout_column_wrap(width = 120,
             radioButtons(inputId = "ic_par_libsource", label = "Data source", choices = c("Upload files", "Testdata"), selected = "Testdata"),
-            radioButtons(inputId = "ic_par_app_method", label = "Workflow", choices = c("IR-Delta", "IDMS", "EC", "EGC"), selected = "IR-Delta"),
+            radioButtons(inputId = "ic_par_app_method", label = "Workflow", choices = c("IR-Delta", "IDMS"), selected = "IR-Delta"),
             shinyjs::disabled(selectInput(inputId = "ic_par_inputformat", label = "File format", choices = list("exp", "icp", "data", "generic"), selected = "exp"))
           ),
           uiOutput(outputId = "ic_par_path_expfiles")
@@ -111,7 +111,7 @@ app_ui <- function() {
       bslib::card_footer(class = "d-flex justify-content-bottom", app_status_line())
     )
   )
-  
+
   ic_plot_card <- bslib::card(
     id = "ic_plot_card",
     min_height = "450px",
@@ -121,7 +121,7 @@ app_ui <- function() {
           position = "right", open = "open", width = "280px", gap = "10px",
           selectInput(inputId = "ic_par_focus_sample", label = "Focus sample", choices = list("Sample 1"=1)),
           checkboxGroupInput(
-            inputId = "ic_par_specplot", 
+            inputId = "ic_par_specplot",
             label = shiny::actionLink(inputId = "ic_help05", label = "Plot options"),
             choices = list(
               "show all samples" = "overlay_mi",
@@ -130,7 +130,7 @@ app_ui <- function() {
               "overlay SI trace" = "overlay_si",
               "overlay ratio points" = "overlay_drift",
               "correct ratio points" = "correct_drift"
-            ), 
+            ),
             selected = c("overlay_pb", "overlay_mi", "overlay_drift")
           ),
           actionButton(inputId = "ic_par_cut_range", label = "cut range") |> bslib::tooltip("Cut samples to currently visible range."),
@@ -139,20 +139,20 @@ app_ui <- function() {
         ),
         plotOutput(
           outputId = "ic_specplot",
-          dblclick = dblclickOpts(id = "ic_specplot_dblclick"), 
+          dblclick = dblclickOpts(id = "ic_specplot_dblclick"),
           brush = brushOpts(id = "ic_specplot_brush", direction = "x", resetOnNew = TRUE)
         ) |> bslib::tooltip("You may select a time range [Click and Drag] with the cursor to zoom. Use [Double Click] to unzoom.", placement = "bottom")
       )
     )
   )
-  
+
   ic_tables_card <- bslib::card(
     id = "ic_tables_card",
     bslib::card_body(
       tabsetPanel(
         id="ic_tabPanel_tables",
         tabPanel(
-          title = "Peak table", 
+          title = "Peak table",
           DT::DTOutput("ic_table_peaks")
         ),
         tabPanel(
@@ -169,7 +169,7 @@ app_ui <- function() {
       )
     )
   )
-  
+
   shiny::tagList(
     golem_add_external_resources(),
     bslib::page_sidebar(
@@ -190,7 +190,7 @@ app_ui <- function() {
       )
     )
   )
-  
+
 }
 # ================================
 
@@ -203,7 +203,7 @@ app_server <- function(input, output, session) {
   old_options <- options()
   on.exit(options(old_options))
   options(shiny.maxRequestSize=30*1024^2) # BrukerFlex Files are >5MB
-  
+
   # store par() results
   # This is of course not useful in a shiny app, but was required from CRAN which
   # in turn led to problems on ShinyServer as par() opens the standard graphics device
@@ -214,18 +214,18 @@ app_server <- function(input, output, session) {
     grDevices::dev.off()
     on.exit(expr = { par(old_par) }, add = TRUE)
   }
-  
+
   # load app data on app start
   testdata <- IsoCor::testdata
   testdata_IDMS <- IsoCor::testdata_IDMS
   isotopes <- IsoCor::isotopes
-  
+
   output$ic_par_path_expfiles <- renderUI({
     # file input as renderUI to allow a reset in case that the upload method is changed
     message("output$ic_par_path_expfiles")
     fileInput(inputId = "ic_par_path_expfiles_inner", label = "Select Files", multiple = TRUE)
   })
-  
+
   ### setup reactive Values ##############################################----
   # the editable peak table
   ic_table_peaks_edit <- shiny::reactiveVal()
@@ -250,7 +250,7 @@ app_server <- function(input, output, session) {
   current_mb_method <- reactiveVal("none")
   # return current screen height to adjust table height
   #screen_height <- reactiveVal(960)
-  
+
   ### show/hide section ##################################################----
   # modify UI depending on workflow (IR-Delta or IDMS)
   observeEvent(input$ic_par_app_method, {
@@ -271,7 +271,7 @@ app_server <- function(input, output, session) {
       shiny::showTab(inputId = "ic_tabPanel_tables", target = "Delta table")
     }
   })
-  
+
   ### reactives ########################################################### ----
   # get input data as list of tables
   file_in <- reactive({
@@ -330,16 +330,16 @@ app_server <- function(input, output, session) {
     validate(need(out, message = "No valid data"))
     return(out)
   })
-  
+
   # register the file_in reactive for app testing
   shiny::exportTestValues(
     file_in = file_in
   )
-  
+
   observeEvent(input$ic_par_specplot, {
     toggle(id = "ic_par_focus_sample", condition = !("overlay_mi" %in% input$ic_par_specplot))
   }, ignoreNULL = FALSE)
-  
+
   # check table headers for consistency and to get colnames to allow user column selection
   file_in_cols <- reactive({
     # [JL] we need input$ic_par_inputformat here to ensure to trigger updates below in observeEvent(file_in_cols())
@@ -350,7 +350,7 @@ app_server <- function(input, output, session) {
     message("[file_in_cols] set for input format ", input$ic_par_inputformat)
     return(colnames(file_in()[[1]]))
   })
-  
+
   # IDMS reactive objects ----
   IDMS_data <- reactive({
     req(file_in(), input$ic_par_IDMS_f, input$ic_par_IR_sample, input$ic_par_Abund_MI, input$ic_par_Inj_Amount, input$ic_par_IR_spike, input$ic_par_Abund_SI, input$ic_par_MF_Spike, input$ic_par_mi_amu, input$ic_par_si_amu, current_mb_method())
@@ -361,16 +361,16 @@ app_server <- function(input, output, session) {
     # R_observe/R_true
     #f_value <- log(x = input$ic_par_IDMS_f, base = input$ic_par_mi_amu/input$ic_par_si_amu)
     k <- IsoCor::mass_bias(
-      mi_amu = input$ic_par_mi_amu, 
-      si_amu = input$ic_par_si_amu, 
-      method = current_mb_method(), 
+      mi_amu = input$ic_par_mi_amu,
+      si_amu = input$ic_par_si_amu,
+      method = current_mb_method(),
       #f_value = f_value
       f_value = input$ic_par_IDMS_f
     )
     coef <- input$ic_par_MF_Spike * (input$ic_par_mi_amu / input$ic_par_si_amu) * (input$ic_par_Abund_SI / input$ic_par_Abund_MI)
     validate(need(is.finite(coef), "Can not compute valid coef with these parameters. Check 'MI amu' and 'SI amu'"))
     message("IDMS_data")
-    idms <- lapply(file_in(), function(x) { 
+    idms <- lapply(file_in(), function(x) {
       x$IR<- x[,input$ic_par_mi_col]/x[,input$ic_par_si_col]
       x$IR_cor <- x$IR * k
       # previous version of Dariya (from 03/2023)
@@ -381,36 +381,36 @@ app_server <- function(input, output, session) {
     })
     return(idms)
   })
-  
-  
+
+
   # convert input tables into MALDIquant spectra format for selected MI trace and RT column ----
   ic_mi_spectra_raw <- reactive({
     req(file_in(), input$ic_par_rt_col, input$ic_par_mi_col, cut_range$min, cut_range$max, rt_shift(), input$ic_par_app_method)
     if (input$ic_par_app_method=="IDMS") req(IDMS_data())
     message("ic_mi_spectra_raw")
     get_spectrum(
-      data = if (input$ic_par_app_method=="IDMS") IDMS_data() else file_in(), 
-      rt_col = input$ic_par_rt_col, 
-      int_col = ifelse(input$ic_par_app_method=="IDMS", "MF", input$ic_par_mi_col), 
-      cut_range = shiny::reactiveValuesToList(cut_range), 
+      data = if (input$ic_par_app_method=="IDMS") IDMS_data() else file_in(),
+      rt_col = input$ic_par_rt_col,
+      int_col = ifelse(input$ic_par_app_method=="IDMS", "MF", input$ic_par_mi_col),
+      cut_range = shiny::reactiveValuesToList(cut_range),
       rt_shift = rt_shift()
     )
   })
-  
+
   # convert input tables into MALDIquant spectra format for selected SI trace and RT column ----
   ic_si_spectra_raw <- reactive({
     req(file_in(), input$ic_par_rt_col, input$ic_par_si_col, cut_range$min, rt_shift())
     req(input$ic_par_app_method=="IR-Delta")
     message("ic_si_spectra_raw")
     get_spectrum(
-      data = file_in(), 
-      rt_col = input$ic_par_rt_col, 
-      int_col = input$ic_par_si_col, 
-      cut_range = shiny::reactiveValuesToList(cut_range), 
+      data = file_in(),
+      rt_col = input$ic_par_rt_col,
+      int_col = input$ic_par_si_col,
+      cut_range = shiny::reactiveValuesToList(cut_range),
       rt_shift = rt_shift()
     )
   })
-  
+
   # provide spectra based on processed raw data ----
   ic_mi_spectra <- reactive({
     req(ic_mi_spectra_raw(), input$ic_par_halfWindowSize, input$ic_par_baseline_method, input$ic_par_peakpicking_SNR, input$ic_par_app_method)
@@ -427,7 +427,7 @@ app_server <- function(input, output, session) {
     message("ic_si_spectra")
     spec_pre_process(data = ic_si_spectra_raw(), hWS = isolate(input$ic_par_halfWindowSize), BLmethod = input$ic_par_baseline_method, wf = input$ic_par_app_method)
   })
-  
+
   # identify peaks in processed mi spectra ----
   ic_mi_peaks <- reactive({
     req(ic_mi_spectra())
@@ -441,7 +441,7 @@ app_server <- function(input, output, session) {
     validate(need(!(inherits(pks, "try-error")), "Can't obtain peaks from MI spectra"))
     return(pks)
   })
-  
+
   # IDMS table ----
   ic_table_idms_pre <- reactive({
     req(ic_mi_spectra(), ic_mi_peaks(), current_mb_method())
@@ -466,7 +466,7 @@ app_server <- function(input, output, session) {
     out$Conc <- round(out$Conc, 3)
     return(out)
   })
-  
+
   # mi peak table ----
   ic_table_peaks_pre <- reactive({
     if (input$ic_par_app_method=="IDMS") req(ic_table_idms_pre()) else req(ic_mi_peaks())
@@ -480,28 +480,28 @@ app_server <- function(input, output, session) {
     if (length(ic_mi_peaks())>=2 & length(unique(table(out[,"Peak ID"])))==1) { enable(id = "ic_par_align_rt") }
     return(out)
   })
-  
+
   # mi/si ratio calculation ----
   ic_table_ratios_pre <- reactive({
     req(ic_table_peaks_edit(), ic_si_spectra(), ic_mi_spectra(), zones())
     message("ic_table_ratios_pre")
     prep_tab_ratios(
-      pks = ic_table_peaks_edit(), 
-      mi_pks = ic_mi_peaks(), 
-      mi_spc = ic_mi_spectra(), 
-      si_spc = ic_si_spectra(), 
+      pks = ic_table_peaks_edit(),
+      mi_pks = ic_mi_peaks(),
+      mi_spc = ic_mi_spectra(),
+      si_spc = ic_si_spectra(),
       isos = paste(input$ic_par_si_col_name, input$ic_par_mi_col_name, sep="/"),
       bl_method = input$ic_par_baseline_method,
       zones = zones(),
       current_coef = current_coef()
     )
   })
-  
+
   # IDMS observer
   observeEvent(input$ic_par_IDMS_mb_method, {
     current_mb_method(input$ic_par_IDMS_mb_method)
-  }, ignoreInit = FALSE) 
-  
+  }, ignoreInit = FALSE)
+
   # add or remove zone levels ----
   observeEvent(input$ic_btn_add_zone, {
     shinyalert::shinyalert(
@@ -546,7 +546,7 @@ app_server <- function(input, output, session) {
       }
     )
   })
-  
+
   # set coef ----
   observeEvent(input$ic_btn_set_coef, {
     shinyalert::shinyalert(
@@ -562,7 +562,7 @@ app_server <- function(input, output, session) {
       }
     )
   })
-  
+
   # delta calculation in case of at least 3 input files ---
   ic_table_deltas_pre <- reactive({
     req(ic_table_ratios_pre())
@@ -571,7 +571,7 @@ app_server <- function(input, output, session) {
     validate(need(any(grep("Delta", colnames(df))), "The ratio table does not contain a column of Delta values to be evaluated."))
     prep_tab_deltas(df = df, prec = 3)
   })
-  
+
   # table of peaks of 'new sample' ----
   shiny::observeEvent(ic_table_peaks_pre(), {
     tmp <- ic_table_peaks_pre()
@@ -585,13 +585,13 @@ app_server <- function(input, output, session) {
     }
     ic_table_peaks_edit(tmp)
   })
-  
+
   # change plot range upon user mouse interaction (click and drag) ----
   observeEvent(input$ic_specplot_brush, {
     spec_plots_xmin(input$ic_specplot_brush$xmin)
     spec_plots_xmax(input$ic_specplot_brush$xmax)
   })
-  
+
   # change plot range upon user mouse interaction (double click) ----
   observeEvent(input$ic_specplot_dblclick, {
     req(ic_mi_spectra())
@@ -599,13 +599,13 @@ app_server <- function(input, output, session) {
     spec_plots_xmin(rng[1])
     spec_plots_xmax(rng[2])
   })
-  
+
   # show fileUpload only when data source is set to 'upload files' ----
   observeEvent(input$ic_par_libsource, {
     toggle(id = "ic_par_path_expfiles", condition = input$ic_par_libsource=="Upload files")
     toggle(id = "ic_par_inputformat", condition = input$ic_par_libsource=="Upload files")
   })
-  
+
   # reset time windows (upon new data or new RT column)
   reset_times <- function() {
     req(file_in(), file_in_cols(), input$ic_par_rt_col)
@@ -625,20 +625,20 @@ app_server <- function(input, output, session) {
       spec_plots_xmax(cut_range$max)
     }
   }
-  
-  # update column selectors when input columns change  
+
+  # update column selectors when input columns change
   observeEvent(file_in_cols(), {
     fic <- file_in_cols()
     n <- length(fic)
     mi_selected <- switch(
-      input$ic_par_inputformat, 
-      "exp"=fic[min(c(7,n))], 
+      input$ic_par_inputformat,
+      "exp"=fic[min(c(7,n))],
       "icp"=fic[min(c(2,n))],
       "generic"=fic[min(c(2,n))],
       "data"=fic[min(c(2,n))])
     si_selected <- switch(
-      input$ic_par_inputformat, 
-      "exp"=fic[min(c(9,n))], 
+      input$ic_par_inputformat,
+      "exp"=fic[min(c(9,n))],
       "icp"=fic[min(c(4,n))],
       "generic"=fic[min(c(3,n))],
       "data"=fic[min(c(3,n))])
@@ -648,25 +648,25 @@ app_server <- function(input, output, session) {
     updateSelectInput(inputId = "ic_par_si_col", choices = I(fic), selected = si_selected)
     reset_times()
   })
-  
+
   # check and update time range filters when time column is changed
   observeEvent(input$ic_par_rt_col, {
     req(file_in())
     reset_times()
   }, ignoreInit = TRUE)
-  
+
   # update MI/SI name inputs when input columns change
   observeEvent(input$ic_par_mi_col, {
     updateTextInput(inputId = "ic_par_mi_col_name", value = input$ic_par_mi_col)
     updateNumericInput(inputId = "ic_par_mi_amu", value = get_iso_amu(x=input$ic_par_mi_col, isotopes=isotopes))
   })
-  
+
   # update MI/SI name inputs when input columns change
   observeEvent(input$ic_par_si_col, {
     updateTextInput(inputId = "ic_par_si_col_name", value = input$ic_par_si_col)
     updateNumericInput(inputId = "ic_par_si_amu", value = get_iso_amu(x=input$ic_par_si_col, isotopes=isotopes))
   })
-  
+
   # set cut range to displayed spectrum range when user triggers this action button
   observeEvent(input$ic_par_cut_range, {
     req(cut_range$min, input$ic_par_rt_col, spec_plots_xmin(), spec_plots_xmax())
@@ -697,7 +697,7 @@ app_server <- function(input, output, session) {
       shinyjs::runjs('document.getElementById("ic_par_align_rt").style.backgroundColor = "#FFFFFF";')
     }
   })
-  
+
   # set cut range to displayed spectrum range when user triggers this action button
   observeEvent(input$ic_par_align_rt, {
     if (status_align()=="off") {
@@ -713,7 +713,7 @@ app_server <- function(input, output, session) {
       status_align("off")
     }
   })
-  
+
   # open a modal to allow the user to specify quantiles for drift filtering
   observeEvent(input$ic_par_set_drift, {
     shinyalert::shinyalert(
@@ -742,7 +742,7 @@ app_server <- function(input, output, session) {
     message("output$ic_table_peaks")
     style_tab_peaks(data = ic_table_peaks_edit(), IDMS = input$ic_par_app_method=="IDMS")
   })
-  
+
   # apply mass bias correction using table action button
   shiny::observeEvent(input$ic_btn_mass_bias, {
     shinyalert::shinyalert(
@@ -751,7 +751,7 @@ app_server <- function(input, output, session) {
         fluidRow(
           column(width = 6, selectInput(inputId = "ic_par_mb_method", label = "Mass bias method", choices = c("none","Linear","Russel","Exponential"), selected = current_mb_method()) |> bslib::tooltip("Select mass bias method.")),
           column(
-            width = 6, 
+            width = 6,
             shiny::textAreaInput(
               inputId = "txt_textAreaInput",
               label = "Copy/Paste or Enter",
@@ -792,7 +792,7 @@ app_server <- function(input, output, session) {
       }
     )
   })
-  
+
   # opens a modal upon button click to enable the user to change the peak type
   shiny::observeEvent(input$ic_btn_peak_type, {
     if (is.null(input$ic_table_peaks_rows_selected)) {
@@ -825,7 +825,7 @@ app_server <- function(input, output, session) {
       }
     }
   })
-  
+
   # enables manual editing of the f_value column in the peak table
   shiny::observeEvent(input$ic_table_peaks_cell_edit, {
     # convert column values to numeric
@@ -835,19 +835,19 @@ app_server <- function(input, output, session) {
     tmp[, input$ic_table_peaks_cell_edit$col[1] + 1] <- x
     ic_table_peaks_edit(tmp)
   })
-  
+
   # update function for automatic calculation of k and several observers
   # [ToDo] Check if the observers should be combined in one observe statement
   update_k <- function() {
     #message("update k in peak table")
     shiny::isolate({
       tmp <- ic_table_peaks_edit()
-      if (nrow(tmp)>=1) { 
+      if (nrow(tmp)>=1) {
         if (current_mb_method()=="none") {
           tmp[,"k"] <- rep(0, nrow(tmp))
         } else {
-          tmp[,"k"] <- round(sapply(tmp[,"f_value"], function(x) { 
-            mass_bias(mi_amu = input$ic_par_mi_amu , si_amu = input$ic_par_si_amu, method = current_mb_method(), f_value = x) 
+          tmp[,"k"] <- round(sapply(tmp[,"f_value"], function(x) {
+            mass_bias(mi_amu = input$ic_par_mi_amu , si_amu = input$ic_par_si_amu, method = current_mb_method(), f_value = x)
           }), 6)
         }
       }
@@ -867,7 +867,7 @@ app_server <- function(input, output, session) {
     req(ic_table_peaks_edit())
     update_k()
   })
-  
+
   # collapse the options side bar to make space for figure and tables output
   # collapsing was deprecated in version 0.2.8 by switching to bslib layout
   # observeEvent(input$sidebar_button, {
@@ -880,7 +880,7 @@ app_server <- function(input, output, session) {
   #     shiny::updateActionLink(inputId = "sidebar_button", icon = shiny::icon("angle-left"))
   #   }
   # })
-  
+
   # adjust UI to current device height in pixel
   # evaluating screen_height was deprecated in version 0.2.8 by switching to bslib layout
   # observe({
@@ -889,19 +889,19 @@ app_server <- function(input, output, session) {
   #     screen_height(input$CurrentScreenHeight)
   #   }
   # })
-  
+
   # ratio(s) table ----
   output$ic_table_ratios <- DT::renderDT({
     message("output$ic_table_ratios")
     style_tab_ratios(data = ic_table_ratios_pre())
   })
-  
+
   # delta table ----
   output$ic_table_deltas <- DT::renderDT({
     message("output$ic_table_deltas")
     style_tab_deltas(data = ic_table_deltas_pre())
   })
-  
+
   # spectrum plot ----
   output$ic_specplot <- shiny::renderPlot({
     req(ic_mi_spectra(), input$ic_par_si_col_name, input$ic_par_mi_col_name, ic_table_peaks_edit(), input$ic_par_app_method)
@@ -919,7 +919,7 @@ app_server <- function(input, output, session) {
       ylab <- "Intensity [V]"
     }
     ic_specplot(
-      opt = opt, 
+      opt = opt,
       xrng = c(spec_plots_xmin(), spec_plots_xmax()),
       mi_spec = ic_mi_spectra(),
       si_spec = si_spec,
@@ -933,14 +933,14 @@ app_server <- function(input, output, session) {
       sel_pk = input$ic_table_peaks_rows_selected
     )
   })
-  
+
   # delta plot ----
   output$ic_deltaplot2 <- shiny::renderPlot({
     shiny::req(ic_table_deltas_pre())
     message("output$ic_deltaplot2")
     ic_deltaplot(df = ic_table_deltas_pre())
   })
-  
+
   # help modals ----
   shiny::observeEvent(input$ic_help01, { help_the_user(filename = "01_general") })
   shiny::observeEvent(input$ic_help02, { help_the_user(filename = "02_file_upload") })
