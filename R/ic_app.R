@@ -50,63 +50,66 @@ app_ui <- function() {
   
   # components
   main_menu_ui <- shiny::tagList(
-    shiny::div(
-      bslib::card(
-        bslib::card_header(
-          shiny::actionLink(inputId = "ic_help02", label = "Data"),
+    shiny::div(style = "display: flex; flex-direction: column; height: calc(100vh - 114px);",
+      shiny::div(style = "flex-grow: 0;",
+        bslib::card(
+          bslib::card_header(
+            shiny::actionLink(inputId = "ic_help02", label = "Data"),
+          ),
+          bslib::layout_column_wrap(width = 120,
+            radioButtons(inputId = "ic_par_libsource", label = "Data source", choices = c("Upload files", "Testdata"), selected = "Testdata"),
+            radioButtons(inputId = "ic_par_app_method", label = "Workflow", choices = c("IR-Delta", "IDMS", "EC", "EGC"), selected = "IR-Delta"),
+            shinyjs::disabled(selectInput(inputId = "ic_par_inputformat", label = "File format", choices = list("exp", "icp", "data", "generic"), selected = "exp"))
+          ),
+          uiOutput(outputId = "ic_par_path_expfiles")
         ),
-        bslib::layout_column_wrap(width = 120,
-          radioButtons(inputId = "ic_par_libsource", label = "Data source", choices = c("Testdata", "Upload files"), selected = "Testdata"),
-          radioButtons(inputId = "ic_par_app_method", label = "Method", choices = c("IR-Delta", "IDMS"), selected = "IR-Delta"),
-          selectInput(inputId = "ic_par_inputformat", label = "File format", choices = list("exp", "icp", "data", "generic"), selected = "exp")
+        bslib::card(
+          bslib::card_header(shiny::actionLink(inputId = "ic_help03", label = "Import")),
+          bslib::layout_column_wrap(width = 120,
+            selectInput(inputId = "ic_par_rt_col", label = "RT column", choices = c("")) |> bslib::tooltip("Select RT column."),
+            textInput(inputId = "ic_par_mi_rt_unit", label = "RT unit", value = "min"),
+            shiny::HTML(""),
+            selectInput(inputId = "ic_par_mi_col", label = "MI column", choices = c("")) |> bslib::tooltip("Select Master Isotope column."),
+            textInput(inputId = "ic_par_mi_col_name", label = "MI Name"),
+            numericInput(inputId = "ic_par_mi_amu", label = "MI amu", value = 0, step = 0.0001),
+            selectInput(inputId = "ic_par_si_col", label = "SI column", choices = c("")) |> bslib::tooltip("Select Secondary Isotope column."),
+            textInput(inputId = "ic_par_si_col_name", label = "SI Name"),
+            numericInput(inputId = "ic_par_si_amu", label = "SI amu", value = 0, step = 0.0001)
+          )
         ),
-        uiOutput(outputId = "ic_par_path_expfiles")
-      ),
-      bslib::card(
-        bslib::card_header(shiny::actionLink(inputId = "ic_help03", label = "Import")),
-        bslib::layout_column_wrap(width = 120,
-          selectInput(inputId = "ic_par_rt_col", label = "RT column", choices = c("")) |> bslib::tooltip("Select RT column."),
-          textInput(inputId = "ic_par_mi_rt_unit", label = "RT unit", value = "min"),
-          shiny::HTML(""),
-          selectInput(inputId = "ic_par_mi_col", label = "MI column", choices = c("")) |> bslib::tooltip("Select Master Isotope column."),
-          textInput(inputId = "ic_par_mi_col_name", label = "MI Name"),
-          numericInput(inputId = "ic_par_mi_amu", label = "MI amu", value = 0, step = 0.0001),
-          selectInput(inputId = "ic_par_si_col", label = "SI column", choices = c("")) |> bslib::tooltip("Select Secondary Isotope column."),
-          textInput(inputId = "ic_par_si_col_name", label = "SI Name"),
-          numericInput(inputId = "ic_par_si_amu", label = "SI amu", value = 0, step = 0.0001)
+        bslib::card(
+          id = "IDMS_par_section",
+          bslib::card_header(shiny::actionLink(inputId = "ic_help10", label = "IDMS Parameters")),
+          bslib::layout_column_wrap(width = 120,
+            numericInput(inputId = "ic_par_IDMS_f", label = "IDMS f-value", value = 0.8876311),
+            selectInput(inputId = "ic_par_IDMS_mb_method", label = "Mass bias", choices = c("none","Linear","Russel","Exponential"), selected = "Russel"),
+            numericInput(inputId = "ic_par_IDMS_halfWindowSize", label = "Smoothing", value = 100, min=0, max=100, step=1),
+          #shiny::h6("Sample related Parameters"),
+            numericInput(inputId = "ic_par_IR_sample", label = "Abund. SI", value = 0.0425),
+            numericInput(inputId = "ic_par_Abund_MI", label = "Abund. MI", value = 0.9499),
+            numericInput(inputId = "ic_par_Inj_Amount", label = "Inj. amount", value = 0.0205),
+          #shiny::h6("Spike related Parameters"),
+            numericInput(inputId = "ic_par_IR_spike", label = "Abund. MI", value = 0.002),
+            numericInput(inputId = "ic_par_Abund_SI", label = "Abund. SI", value = 0.998),
+            numericInput(inputId = "ic_par_MF_Spike", label = "MF", value = 4.78881)
+          )
+        ),
+        bslib::card(
+          id = "Processing_par_section",
+          bslib::card_header(shiny::actionLink(inputId = "ic_help04", label = "Processing")),
+          bslib::layout_column_wrap(width = 120,
+            numericInput(inputId = "ic_par_halfWindowSize", label = "Smoothing", value = 25, min=0, max=100, step=1) |> bslib::tooltip("Smoothing parameter: 'half window size' of peak. Set to '0' to omit this processing step."),
+            selectInput(inputId = "ic_par_baseline_method", label = "BL Correction", choices = c("none", "SNIP", "TopHat", "ConvexHull", "median"), selected = "SNIP") |> bslib::tooltip("Select method for baseline estimation or 'none' to omit this processing step."),
+            shiny::HTML(""),
+            numericInput(inputId = "ic_par_peakpicking_SNR", label = "Peak (SNR)", value = 25, min=1, max=100, step=1) |> bslib::tooltip("Peak picking parameter: 'Signal/Noise ratio' [range: 1..100]."),
+            numericInput(inputId = "ic_par_peakpicking_k", label = "Peak (k)", value = 3, min=3, max=7, step=1) |> bslib::tooltip("Peak picking parameter: 'Peak border min count' [range: 3..7]."),
+            checkboxInput(inputId = "ic_par_peakpicking_noise", label = "Peak (noise)", value = TRUE) |> bslib::tooltip("Peak picking parameter: 'use noise cutoff' [TRUE/FALSE].")
+          )
         )
       ),
-      bslib::card(
-        id = "IDMS_par_section",
-        bslib::card_header(shiny::actionLink(inputId = "ic_help10", label = "IDMS Parameters")),
-        bslib::layout_column_wrap(width = 120,
-          numericInput(inputId = "ic_par_IDMS_f", label = "IDMS f-value", value = 0.8876311),
-          selectInput(inputId = "ic_par_IDMS_mb_method", label = "Mass bias", choices = c("none","Linear","Russel","Exponential"), selected = "Russel"),
-          numericInput(inputId = "ic_par_IDMS_halfWindowSize", label = "Smoothing", value = 100, min=0, max=100, step=1),
-        #shiny::h6("Sample related Parameters"),
-          numericInput(inputId = "ic_par_IR_sample", label = "Abund. SI", value = 0.0425),
-          numericInput(inputId = "ic_par_Abund_MI", label = "Abund. MI", value = 0.9499),
-          numericInput(inputId = "ic_par_Inj_Amount", label = "Inj. amount", value = 0.0205),
-        #shiny::h6("Spike related Parameters"),
-          numericInput(inputId = "ic_par_IR_spike", label = "Abund. MI", value = 0.002),
-          numericInput(inputId = "ic_par_Abund_SI", label = "Abund. SI", value = 0.998),
-          numericInput(inputId = "ic_par_MF_Spike", label = "MF", value = 4.78881)
-        )
-      ),
-      bslib::card(
-        id = "Processing_par_section",
-        bslib::card_header(shiny::actionLink(inputId = "ic_help04", label = "Processing")),
-        bslib::layout_column_wrap(width = 120,
-          numericInput(inputId = "ic_par_halfWindowSize", label = "Smoothing", value = 25, min=0, max=100, step=1) |> bslib::tooltip("Smoothing parameter: 'half window size' of peak. Set to '0' to omit this processing step."),
-          selectInput(inputId = "ic_par_baseline_method", label = "BL Correction", choices = c("none", "SNIP", "TopHat", "ConvexHull", "median"), selected = "SNIP") |> bslib::tooltip("Select method for baseline estimation or 'none' to omit this processing step."),
-          shiny::HTML(""),
-          numericInput(inputId = "ic_par_peakpicking_SNR", label = "Peak (SNR)", value = 25, min=1, max=100, step=1) |> bslib::tooltip("Peak picking parameter: 'Signal/Noise ratio' [range: 1..100]."),
-          numericInput(inputId = "ic_par_peakpicking_k", label = "Peak (k)", value = 3, min=3, max=7, step=1) |> bslib::tooltip("Peak picking parameter: 'Peak border min count' [range: 3..7]."),
-          checkboxInput(inputId = "ic_par_peakpicking_noise", label = "Peak (noise)", value = TRUE) |> bslib::tooltip("Peak picking parameter: 'use noise cutoff' [TRUE/FALSE].")
-        )
-      )
-    ),
-    bslib::card_footer(class = "d-flex justify-content-bottom", app_status_line())
+      div(style = "flex-grow: 1;"),
+      bslib::card_footer(class = "d-flex justify-content-bottom", app_status_line())
+    )
   )
   
   ic_plot_card <- bslib::card(
@@ -172,23 +175,18 @@ app_ui <- function() {
     bslib::page_sidebar(
       sidebar = bslib::sidebar(
         position = "left", open = "open", width = "520px",
-        shiny::div(
-          class = "d-flex justify-content-between flex-column",
-          main_menu_ui
-        )
+        main_menu_ui
       ),
       ic_plot_card,
       ic_tables_card,
       title = bslib::card_title(
-        style = "width: 100%;",
+        style = "width: 100%; margin: 0px;",
+        class = "d-flex justify-content-between align-items-center",
         shiny::div(
-          class = "d-flex justify-content-between",
-          shiny::div(
-            img(src = "www/bam_logo_20pt.gif", alt="BAM Logo"),
-            strong("BAM"), em("IsoCor"),
-          ),
-          shiny::actionLink(inputId = "ic_help01", label = NULL, icon = shiny::icon(name = "question"))
-        )
+          img(src = "www/bam_logo_20pt.gif", alt="BAM Logo"),
+          strong("BAM"), em("IsoCor"), " - automatic processing of ICP-MS data"
+        ),
+        shiny::actionLink(inputId = "ic_help01", label = NULL, icon = shiny::icon(name = "question-circle"))
       )
     )
   )
@@ -282,9 +280,20 @@ app_server <- function(input, output, session) {
     out <- NULL
     if (input$ic_par_libsource=="Upload files") {
       if (!is.null(input$ic_par_path_expfiles_inner)) {
+        # guess file format based on file extension
+        fl_frmt <- tolower(unique(tools::file_ext(input$ic_par_path_expfiles_inner$name)))
+        fl_frmt <- switch(
+          fl_frmt,
+          "txt" = "generic",
+          "csv" = "data",
+          "icp" = "icp",
+          "exp" = "exp",
+          "generic"
+        )
         out <- try(lapply(input$ic_par_path_expfiles_inner$datapath, function(x) {
-          read_raw_data(path=x, format=input$ic_par_inputformat)
+          read_raw_data(path=x, format=fl_frmt)
         }))
+        updateSelectInput(inputId = "ic_par_inputformat", selected=fl_frmt)
         if (inherits(x = out, what = "try-error")) {
           out <- NULL
         } else {

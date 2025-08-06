@@ -43,7 +43,7 @@ IsoCor::ic_app()
 
 The app contains test-data sets for both workflows, IR and ID. Measurement files
 can be uploaded in a number of different formats. Most parameters are explained 
-either by tooltips or popups.
+either by tool tips or popups.
 
 ## Detailed documentation
 

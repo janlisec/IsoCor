@@ -25,7 +25,7 @@ iso_ratio <- function(data, method = c("PBP", "PAI", "LRS"), thr = 1) {
   # test if thr is valid input
   stopifnot(exprs = {
     "[iso_ratio] parameter thr should be of length=1" = length(thr)==1
-    "[iso_ratio] parameter thr should be of numeric" = is.numeric(thr)
+    "[iso_ratio] parameter thr should be numeric" = is.numeric(thr)
     "[iso_ratio] parameter thr should be within interval {0, 1}" = thr>=0 & thr<=1
   })
   
