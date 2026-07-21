@@ -2,7 +2,7 @@
 #' @description \code{tab_peaks} will .
 #' @param p MALDIquant peak list.
 #' @param s MALDIquant spectra list..
-#' @examples 
+#' @examples
 #' #tab_peaks(p = ic_mi_peaks, s = )
 #' @return A data frame of peaks.
 #' @keywords internal
@@ -10,31 +10,31 @@
 prep_tab_peaks <- function(p, s, mb = c("none","Linear","Russel","Exponential")) {
   stopifnot(length(p)==length(s))
   mb <- match.arg(mb)
-  out <- ldply(1:length(p), function(i) {
+  out <- ldply_base(1:length(p), function(i) {
     x <- p[[i]]
     sm <- mass(s[[i]])
     rnd_time <- 2
     if (length(x@mass)==0) {
       data.frame(
-        "Sample"=0L, 
-        "Peak ID"=0L, 
-        "RT max"=0L, 
-        "RT start"=0L, 
+        "Sample"=0L,
+        "Peak ID"=0L,
+        "RT max"=0L,
+        "RT start"=0L,
         "RT end"=0L,
-        "Scan start"=0L, 
+        "Scan start"=0L,
         "Scan end"=0L,
         "Scan length"=0L,
         check.names = FALSE, stringsAsFactors = FALSE)[-1,]
     } else {
-      ldply(1:length(x@mass), function(j) {
+      ldply_base(1:length(x@mass), function(j) {
         pb <- unlist(x@metaData$pb[j,])
         data.frame(
-          "Sample"=i, 
-          "Peak ID"=j, 
-          "RT max"=round(x@mass[j], rnd_time), 
-          "RT start"=round(sm[pb[1]], rnd_time), 
+          "Sample"=i,
+          "Peak ID"=j,
+          "RT max"=round(x@mass[j], rnd_time),
+          "RT start"=round(sm[pb[1]], rnd_time),
           "RT end"=round(sm[pb[2]], rnd_time),
-          "Scan start"=pb[1], 
+          "Scan start"=pb[1],
           "Scan end"=pb[2],
           "Scan length"=diff(pb)+1,
           check.names = FALSE, stringsAsFactors = FALSE)
@@ -44,7 +44,7 @@ prep_tab_peaks <- function(p, s, mb = c("none","Linear","Russel","Exponential"))
   out <- out[order(out[,"Peak ID"]),]
   # attach columns for mass_bias correction
   out <- cbind(
-    out, 
+    out,
     data.frame(
       "Mass bias method"=rep(mb, nrow(out)),
       "f_value"=rep(0, nrow(out)),
@@ -52,7 +52,7 @@ prep_tab_peaks <- function(p, s, mb = c("none","Linear","Russel","Exponential"))
       check.names = FALSE
     )
   )
-  return(out)  
+  return(out)
 }
 
 #' @title style_tab_peaks.
@@ -102,17 +102,17 @@ style_tab_peaks <- function(data, IDMS = FALSE) {
   }
   DT::datatable(
     data = data,
-    "extensions" = "Buttons", 
+    "extensions" = "Buttons",
     "options" = list(
-      "server" = FALSE, 
-      "dom" = "Bft", 
+      "server" = FALSE,
+      "dom" = "Bft",
       "autoWidth" = TRUE,
       "paging" = FALSE,
-      "pageLength" = -1, 
+      "pageLength" = -1,
       "buttons" = btn_list
-    ), 
-    "selection" = list(mode="single", target="row"), 
-    "editable" = editable, 
+    ),
+    "selection" = list(mode="single", target="row"),
+    "editable" = editable,
     "rownames" = NULL
   )
 }
@@ -128,8 +128,8 @@ style_tab_idms <- function(data) {
     data = data,
     "extensions" = "Buttons",
     "options" = list(
-      "server" = FALSE, 
-      "dom"="Bt", 
+      "server" = FALSE,
+      "dom"="Bt",
       "autoWidth" = TRUE,
       "paging" = FALSE,
       "pageLength" = -1,
@@ -142,8 +142,8 @@ style_tab_idms <- function(data) {
           filename = "IDMS_table"
         )
       )
-    ), 
-    "selection" = list(mode="single", target="row"), 
+    ),
+    "selection" = list(mode="single", target="row"),
     "rownames" = NULL
   )
   return(dt)
@@ -163,7 +163,7 @@ style_tab_idms <- function(data) {
 #' @noRd
 prep_tab_ratios <- function(pks, mi_pks, mi_spc, si_spc, isos, bl_method, zones, current_coef) {
   # For every sample...
-  out <- ldply(1:length(mi_pks), function(i) {
+  out <- ldply_base(1:length(mi_pks), function(i) {
     x <- mi_pks[[i]]
     smM <- mass(mi_spc[[i]])
     siM <- intensity(mi_spc[[i]])
@@ -181,15 +181,15 @@ prep_tab_ratios <- function(pks, mi_pks, mi_spc, si_spc, isos, bl_method, zones,
       ptps <- rep("none", length(unique(pks[,"Peak ID"])))
     }
     # For every ratio method...
-    ldply(c("PBP","PAI","LRS"), function(ratio_method) {
+    ldply_base(c("PBP","PAI","LRS"), function(ratio_method) {
       # For every Zone value...
-      ldply(zones, function(zone) {
+      ldply_base(zones, function(zone) {
         out <- data.frame(
-          "Sample"=i, 
+          "Sample"=i,
           "Isotopes"=isos,
           "BL method"=bl_method,
-          "Ratio method"=ratio_method, 
-          "Zone [%]"=round(100*zone), 
+          "Ratio method"=ratio_method,
+          "Zone [%]"=round(100*zone),
           check.names = FALSE, stringsAsFactors = FALSE
         )
         for (j in 1:length(dfs)) {
@@ -220,9 +220,9 @@ prep_tab_ratios <- function(pks, mi_pks, mi_spc, si_spc, isos, bl_method, zones,
   # round values
   for (cols in grep("Ratio P", colnames(out))) { out[,cols] <- round(out[,cols], 6) }
   if (any(grep("Delta P", colnames(out)))) {
-    for (cols in grep("Delta P", colnames(out))) { 
+    for (cols in grep("Delta P", colnames(out))) {
       # round delta values to 3 digits
-      out[,cols] <- round(out[,cols], 3) 
+      out[,cols] <- round(out[,cols], 3)
       # add per mille sign for delta column
       colnames(out)[cols] <- paste(colnames(out)[cols], "[\u2030]")
     }
@@ -288,16 +288,16 @@ style_tab_ratios <- function(data) {
   )
   dt <- DT::datatable(
     data = data,
-    "extensions" = "Buttons", 
+    "extensions" = "Buttons",
     "options" = list(
-      "server" = FALSE, 
-      "dom"="Bft", 
+      "server" = FALSE,
+      "dom"="Bft",
       "autoWidth" = TRUE,
       "paging" = FALSE,
-      "pageLength" = -1, 
+      "pageLength" = -1,
       "buttons" = btn_list
-    ), 
-    "selection" = list(mode="single", target="row"), 
+    ),
+    "selection" = list(mode="single", target="row"),
     "rownames" = NULL
   )
   dt <- DT::formatCurrency(table = dt, columns = grep("Delta P", colnames(data)), digits = 3, currency="")
@@ -315,15 +315,15 @@ prep_tab_deltas <- function(df, prec = 3) {
   message("ic_table_deltas_pre")
   p_cols <- grep("Delta", colnames(df))
   # for each Peak...
-  out <- plyr::ldply(p_cols, function(j) {
-    plyr::ldply(split(df, interaction(df[,"Ratio method"], df[,"Zone [%]"], drop=TRUE)), function(x) {
+  out <- ldply_base(p_cols, function(j) {
+    ldply_base(split(df, interaction(df[,"Ratio method"], df[,"Zone [%]"], drop=TRUE)), function(x) {
       tmp <- x[1, c("Ratio method","Zone [%]"), drop=FALSE]
       tmp[,"Mean Delta"] <- mean(x[,j])
       tmp[,"SD Delta"] <- sd(x[,j])
       tmp[,"Peak"] <- gsub("[^[:digit:]]", "", colnames(x)[j])
       return(tmp)
-    }, .id = NULL)
-  }, .id = NULL)
+    })
+  })
   out[,"Mean Delta"] <- round(out[,"Mean Delta"], 3)
   out[,"SD Delta"] <- round(out[,"SD Delta"], 3)
   # add per mille sign to colnames
@@ -366,16 +366,16 @@ style_tab_deltas <- function(data) {
   )
   dt <- DT::datatable(
     data = data,
-    "extensions" = "Buttons", 
+    "extensions" = "Buttons",
     "options" = list(
-      "server" = FALSE, 
-      "dom"="Bft", 
+      "server" = FALSE,
+      "dom"="Bft",
       "autoWidth" = TRUE,
       "paging" = FALSE,
-      "pageLength" = -1, 
+      "pageLength" = -1,
       "buttons" = btn_list
     ),
-    "selection" = list(mode="single", target="row"),  
+    "selection" = list(mode="single", target="row"),
     "rownames" = NULL
   )
   dt <- DT::formatCurrency(table = dt, columns = grep("Delta", colnames(data)), digits = 3, currency="")

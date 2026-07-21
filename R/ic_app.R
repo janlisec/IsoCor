@@ -18,7 +18,6 @@
 #' @importFrom graphics abline axis box legend lines mtext par points segments
 #' @importFrom grDevices grey pdf dev.off
 #' @importFrom MALDIquant transformIntensity smoothIntensity removeBaseline detectPeaks createMassSpectrum mass intensity
-#' @importFrom plyr ldply
 #' @importFrom shinyalert shinyalert
 #' @importFrom shinyjs useShinyjs hide show enable disable toggle
 #' @importFrom stats median rnorm sd quantile
@@ -772,9 +771,7 @@ app_server <- function(input, output, session) {
           tmp <- gsub("\t$", "\t\t", tmp)
           # split at "\t" and ensure equal length
           # convert to numeric (what is expected by downstream functions)
-          tmp <- plyr::laply(tmp, function(x) {
-            x <- try(as.numeric(x))
-          }, .drop = FALSE)
+          tmp <- do.call(rbind, lapply(tmp, function(x) try(as.numeric(x))))
           if (prod(dim(tmp))==nrow(tab) && all(is.finite(tmp))) {
             tab[, "f_value"] <- as.vector(unlist(tmp))
           } else {
